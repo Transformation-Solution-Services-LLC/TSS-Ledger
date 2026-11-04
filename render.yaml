@@ -1,0 +1,37 @@
+# One web service serving the API and the frontend, plus a Postgres database
+# for funds, budgets and spending. In the TSS suite
+# this is deployed from TSS-FullStack's render.yaml instead, as tss-ledger.
+databases:
+  - name: tss-ledger-db
+    plan: basic-256mb
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: tss-ledger
+    runtime: node
+    plan: starter
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: TRUST_PROXY
+        value: "1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tss-ledger-db
+          property: connectionString
+      # People sign in through Cockpit. Its public address, e.g. https://cockpit.example.org
+      - key: COCKPIT_URL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      # Lets Cockpit read totals, and Watson and Rook-E read grant figures (never a payee or an entry).
+      - key: LEDGER_SERVICE_TOKEN
+        generateValue: true
+      - key: TZ_DISPLAY
+        value: America/Los_Angeles
