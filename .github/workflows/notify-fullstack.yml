@@ -1,0 +1,39 @@
+# Tells TSS-FullStack that main has a new tested commit, once this
+# repository's own CI passes on main. FullStack then opens a pull request
+# that moves its services/ledger pointer here, runs the Cockpit sign-in test,
+# and merges only if everything passes.
+#
+# Needs the FULLSTACK_UPDATE_TOKEN secret (TSS-FullStack docs/APP_UPDATES.md,
+# step 2). Without it this job warns and does nothing.
+name: Notify FullStack
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  notify:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Send app-updated to TSS-FullStack
+        env:
+          TOKEN: ${{ secrets.FULLSTACK_UPDATE_TOKEN }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::warning::FULLSTACK_UPDATE_TOKEN is not set, so TSS-FullStack was not told about $SHA."
+            exit 0
+          fi
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/Transformation-Solution-Services-LLC/TSS-FullStack/dispatches \
+            -d "{\"event_type\":\"app-updated\",\"client_payload\":{\"app\":\"ledger\",\"sha\":\"$SHA\"}}"
+          echo "Asked TSS-FullStack to move services/ledger to $SHA."

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f1eee5">
+  <title>Ledger</title>
+  <link rel="icon" href="/brand/ledger.png" type="image/png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Ledger">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="login" class="login" hidden>
+    <div class="card login-card">
+      <h1 class="brandbar brandbar-login"><picture><source srcset="/brand/tss-wordmark-light.webp" media="(prefers-color-scheme: dark)"><img class="brandbar-tss" src="/brand/tss-wordmark.webp" alt="TSS"></picture><img class="brandbar-icon" src="/brand/ledger.png" alt=""><span class="brandbar-name">Ledger</span><img class="brandbar-wally" src="/brand/wally.webp" alt="Wally, the TSS robot"></h1>
+      <p class="muted">What each grant has, has spent and has left.</p>
+      <p id="login-message">Open Ledger from Cockpit to sign in.</p>
+      <button id="cockpit-link" type="button" class="primary" hidden>Go to Cockpit</button>
+      <button id="dev-signin" type="button" hidden>Developer sign-in</button>
+      <p id="login-error" class="error" role="alert"></p>
+    </div>
+  </div>
+
+  <div id="app" class="shell" hidden>
+    <aside class="side">
+      <a class="brandbar" href="#/"><picture><source srcset="/brand/tss-wordmark-light.webp" media="(prefers-color-scheme: dark)"><img class="brandbar-tss" src="/brand/tss-wordmark.webp" alt="TSS"></picture><img class="brandbar-icon" src="/brand/ledger.png" alt=""><span class="brandbar-name">Ledger</span><img class="brandbar-wally" src="/brand/wally.webp" alt="Wally, the TSS robot"></a>
+      <nav class="nav" aria-label="Ledger">
+        <a href="#/" data-view="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11L12 4l8.5 7v9h-5.5v-5.5h-6V20H3.5z"/></svg><span>Overview</span></a>
+        <a href="#/funds" data-view="funds"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v12H4z"/><path d="M8 7V4.5h8V7M4 12h16"/></svg><span>Grants</span></a>
+        <a href="#/spending" data-view="spending"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5h14v17l-2.5-1.5-2.5 1.5-2-1.5-2 1.5-2.5-1.5L5 20.5z"/><path d="M9 8.5h6M9 12h6M9 15.5h4"/></svg><span>Spending</span></a>
+        <a href="#/import" data-view="import" data-manage hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg><span>Import</span></a>
+        <a href="#/activity" data-view="activity" data-manage hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span>Activity</span></a>
+      </nav>
+      <div class="spacer"></div>
+      <div id="who" class="health"></div>
+    </aside>
+    <main class="main">
+      <section id="view"></section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+  <div id="modal" class="modal" hidden role="dialog" aria-modal="true"><div class="card modal-card" id="modal-body"></div></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

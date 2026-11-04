@@ -1,0 +1,20 @@
+{
+  "name": "tss-ledger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Ledger: grant budgets, spending and burn rate in the TSS product suite. Staff sign in through Cockpit.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^4.22.3",
+    "pg": "^8.23.1"
+  }
+}
