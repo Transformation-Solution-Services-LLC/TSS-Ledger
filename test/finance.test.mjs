@@ -71,6 +71,7 @@ test('Needs you: a line over budget, money left near the end, and a grant past i
   assert.equal(over[0].id, 'over-f1');
   assert.equal(over[0].severity, 'overdue');
   assert.equal(over[0].to, '#/funds/f1');
+  assert.match(over[0].detail, /^[^:]+: \$[\d,.]+ spent of \$[\d,.]+\.$/, 'names the line over and its own budget, not the grant total');
   const ending = needsYou({ funds: [fund], lines, entries: [entry('2026-02-01', 2000)] }, '2026-11-15').items;
   assert.deepEqual(ending.map((i) => i.id), ['ending-f1']);
   assert.match(ending[0].title, /ends in 46 days with \$10,000 unspent/);
