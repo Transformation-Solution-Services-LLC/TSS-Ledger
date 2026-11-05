@@ -1,5 +1,5 @@
 // The look of the pages: the shared TSS theme tokens, the brand mark in the
-// upper left, the system font, and the writing rules.
+// upper left, DM Sans (as in Cockpit), and the writing rules.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -20,7 +20,8 @@ test('the stylesheet carries the shared TSS theme tokens and names no brand colo
   for (const [k, v] of Object.entries(shared)) assert.equal(tokens[k], v, k);
   const rest = css.slice(css.indexOf('/* tss-theme:end */'));
   for (const brand of ['#0a3269', '#17457f', '#c87255', '#a9512f', '#f6f4ee', '#ddd7ca']) assert.ok(!rest.toLowerCase().includes(brand), `${brand} named outside the theme tokens`);
-  assert.doesNotMatch(css, /DM Sans|@font-face/, 'the system font, as in the other apps');
+  assert.ok(css.includes('@font-face { font-family: "DM Sans"; src: url("/fonts/dm-sans.woff2")'), 'DM Sans, served from this app, as in Cockpit');
+  assert.ok(fs.existsSync(path.join(pub, 'fonts', 'dm-sans.woff2')), 'the font file ships with the app');
 });
 
 test('upper left of every screen: TSS wordmark, the Ledger icon, the name, Wally', () => {

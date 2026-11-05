@@ -192,24 +192,26 @@ function fundRows(list) {
 async function showHome() {
   const o = await api('/api/home');
   const t = o.totals;
+  // A first visit gets one clear next step, not a row of zeros.
+  const empty = !o.funds.length && !o.recent.length;
   $('#view').innerHTML = `
     <div class="head"><div><h2>Overview</h2><p class="muted">${esc(state.org)}, as of ${esc(day(o.as_of))}</p></div>
-      <div class="row"><button class="primary" id="spend">Record spending</button>${state.canManage ? '<button id="new-fund">New grant</button>' : ''}</div></div>
-    <div class="tiles">
+      <div class="row">${empty ? '' : `<button class="primary" id="spend">Record spending</button>${state.canManage ? '<button id="new-fund">New grant</button>' : ''}`}</div></div>
+    ${empty ? '' : `<div class="tiles">
       <div class="tile"><div class="n">${esc(money(t.restricted.remaining))}</div><div class="l">Restricted, left to spend</div></div>
       <div class="tile"><div class="n">${esc(money(t.restricted.spent))}</div><div class="l">Restricted, spent of ${esc(money(t.restricted.budget))}</div></div>
       <div class="tile"><div class="n">${esc(money(t.unrestricted.remaining))}</div><div class="l">Unrestricted, left</div></div>
       <div class="tile ${t.off_pace ? 'warn' : ''}"><div class="n">${t.off_pace}</div><div class="l">Off pace</div></div>
-    </div>
+    </div>`}
     ${o.needs.length ? `<div class="card needs"><h3>Look at these</h3><ul class="timeline">${o.needs.map((n) => `<li><span class="badge ${n.severity === 'overdue' ? 'bad' : 'warn'}">${n.severity === 'overdue' ? 'Over' : 'Soon'}</span><a class="what" href="${esc(n.to)}">${esc(n.title)}</a><span class="muted">${esc(n.detail)}</span></li>`).join('')}</ul></div>` : ''}
-    <h3>Open grants and funds</h3>
-    ${o.funds.length ? fundRows(o.funds) : `<div class="card empty-state"><p><strong>No grants yet.</strong></p><p class="muted">Add a grant with its budget, then record or import what it has spent.</p>${state.canManage ? '<p class="row"><button class="primary" id="first-fund">Add a grant</button><a href="#/import">Import a spreadsheet</a></p>' : ''}</div>`}
+    ${empty ? '' : '<h3>Open grants and funds</h3>'}
+    ${o.funds.length ? fundRows(o.funds) : `<div class="card empty-state"><p><strong>${empty ? 'Add your first grant' : 'No open grants.'}</strong></p><p class="muted">Add a grant with its budget, then record or import what it has spent.</p>${state.canManage ? '<p class="row"><button class="primary" id="first-fund">Add a grant</button><a href="#/import">Import a spreadsheet</a></p>' : ''}</div>`}
     ${o.recent.length ? `<h3>Latest spending</h3>${entryTable(o.recent, { withFund: true })}` : ''}`;
   wireRows();
   const newFund = () => modalForm(fundForm(), async (v) => { const f = await api('/api/funds', { method: 'POST', body: v }); location.hash = `#/funds/${f.id}`; });
   $('#new-fund')?.addEventListener('click', newFund);
   $('#first-fund')?.addEventListener('click', newFund);
-  $('#spend').onclick = () => spendForm(o.funds);
+  $('#spend')?.addEventListener('click', () => spendForm(o.funds));
 }
 
 async function spendForm(funds, fund = null) {
