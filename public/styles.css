@@ -29,7 +29,8 @@
 /* tss-theme:end */
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+@font-face { font-family: "DM Sans"; src: url("/fonts/dm-sans.woff2") format("woff2"); font-weight: 100 1000; font-style: normal; font-display: swap; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif; font-optical-sizing: auto; }
 h1, h2, h3 { line-height: 1.25; margin: 0 0 .5rem; }
 h2 { font-size: 1.35rem; } h3 { font-size: 1.05rem; margin-top: 1.5rem; }
 a { color: var(--primary); }
@@ -182,3 +183,9 @@ details.card summary { cursor: pointer; font-weight: 600; }
 .fund-pick { max-width: 28rem; margin-bottom: 1rem; }
 .head.sub { align-items: center; margin: 1.5rem 0 .6rem; }
 .head.sub h3 { margin: 0; }
+
+/* Native controls in the house style: file pickers look like our buttons, checks and radios take the brand color. */
+input[type="checkbox"], input[type="radio"] { accent-color: var(--primary); }
+input[type="file"] { padding: .35rem .4rem; color: var(--muted); }
+input[type="file"]::file-selector-button { font: inherit; color: var(--text); background: var(--sunken); border: 1px solid var(--border); border-radius: 6px; padding: .35rem .8rem; margin-right: .75rem; cursor: pointer; }
+input[type="file"]::file-selector-button:hover { background: var(--primary-subtle); color: var(--primary); }
