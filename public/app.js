@@ -6,8 +6,13 @@ const $ = (sel, root = document) => root.querySelector(sel);
 
 import { esc, day, when, KIND, STATUS, PACE, money, pct, monthLabel, launchRoute } from './util.js';
 import { mountImporter } from './importer.js';
+import { tssNav } from './tss-nav.js';
 
 const state = { token: null, name: '', org: '', canManage: false, me: null, today: new Date().toISOString().slice(0, 10) };
+
+// Back (top left) and Cockpit (top right) on every screen: public/tss-nav.js.
+const nav = tssNav({ mount: $('.main'), home: '#/' });
+fetch('/api/health').then((r) => r.json()).then((h) => nav.setCockpitUrl(h?.cockpit_url)).catch(() => {});
 
 try {
   state.token = sessionStorage.getItem('ledger.token');
