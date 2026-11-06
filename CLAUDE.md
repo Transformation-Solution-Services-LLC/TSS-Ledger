@@ -10,6 +10,8 @@ README.md.
 - `lib/store.js` picks the store: `store-postgres.js` (production) or `store-memory.js` (dev, tests). One contract; `test/store.test.mjs` runs it against both.
 - `lib/finance.js` every figure the app shows and shares: fund summaries, burn rate, pace, line variance, totals, Cockpit's rollup and Needs you, the sentences Watson cites. Pure functions over the store's rows, in whole cents.
 - `lib/import-map.js`, `lib/csv.js` CSV in and out, column matching.
+- `lib/intakes.js`, `lib/shape.js`, `services/sense.js`, `services/extract.js` a pile of files made sense of: read, a shape proposed by Claude, read through by Ledger, checked until three different models clear it, imported.
+- `lib/usage.js` the organization's monthly AI limit in Cockpit (same as Library).
 - `lib/rollodex.js` the Rollodex client: link a grant's funder.
 - `lib/cockpit.js` launch-ticket verification; `lib/cockpit-link.js` access changes and the audit trail; `lib/auth.js` sessions and the service token. Same files as Vault and Rollodex.
 - `lib/error-tracking.js` sends 5xx errors and crashes to a Sentry-format tracker, scrubbed. Off without `ERROR_TRACKING_DSN`.
@@ -30,7 +32,8 @@ DEV_SIGNIN=on npm start                     # http://localhost:8797
 - **Everything belongs to one organization.** Every store call names `org_id`; every route answers 404 for another organization's ids, and the store refuses a reference (fund, line) from another organization.
 - **Nothing is deleted.** A fund is archived, a budget line is removed (kept, hidden), a spend entry is voided with a reason and stays on the record, counted for nothing.
 - **Money is a number of dollars** in the contract, `numeric(14,2)` in Postgres. Every sum is taken in whole cents (`lib/finance.js`). Restricted and unrestricted money are never added together.
-- **Figures are computed by Ledger, never by a model.** Watson and Rook-E quote what `/api/service/*` answers.
+- **Figures are computed by Ledger, never by a model.** Watson and Rook-E quote what `/api/service/*` answers. In a pile of files a model proposes only the shape; `lib/shape.js` reads every amount, and an award needs its quote in the document.
+- **Three different models clear the same draft** before a pile imports without a warning (`services/sense.js`). A fix restarts the count; the drafter never checks itself; the page never names a model.
 - **Other apps get figures, never entries.** Cockpit, Watson and Rook-E never receive a payee, a memo or a single entry. Each service read is logged with the app.
 - **Permissions:** `use` reads and records spending; `manage` changes grants and budgets, imports, exports, voids any entry, reads the activity log. Cockpit grants them.
 - **Dates are local calendar days** (`YYYY-MM-DD`), never converted through UTC. `today()` uses `TZ_DISPLAY`.
@@ -39,7 +42,7 @@ DEV_SIGNIN=on npm start                     # http://localhost:8797
 - **Never forward an upstream error body.** Use `PublicError`.
 - **The error tracker gets ids, never people.** Keep `test/error-tracking.test.mjs` passing.
 - **Organization export is Cockpit's alone.** `GET /api/export/org` answers only `EXPORT_TOKEN`, logged in the activity log.
-- **CI needs no secrets.** Postgres runs as a CI service; Cockpit is a stand-in.
+- **CI needs no secrets.** Postgres runs as a CI service; Cockpit is a stand-in; Claude is stubbed.
 - **The look is the shared TSS app shell**: cream page, light side column with the brand mark upper left, DM Sans served from `public/fonts` (as in Cockpit), Cockpit's theme tokens between `/* tss-theme:start */` and `/* tss-theme:end */`. `test/ui.test.mjs` enforces it.
 
 ## Writing conventions

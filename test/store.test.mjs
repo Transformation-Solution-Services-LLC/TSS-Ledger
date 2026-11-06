@@ -11,7 +11,7 @@ const stores = [['memory', async () => new MemoryStore().init()]];
 if (process.env.TEST_DATABASE_URL) {
   stores.push(['postgres', async () => {
     const s = await new PostgresStore(process.env.TEST_DATABASE_URL).init();
-    await s.q('TRUNCATE ledger_activity, ledger_entries, ledger_lines, ledger_funds');
+    await s.q('TRUNCATE ledger_intakes, ledger_activity, ledger_entries, ledger_lines, ledger_funds');
     return s;
   }]);
 }
@@ -111,6 +111,35 @@ for (const [name, open] of stores) {
       await store.log('org-b', { actor: 'Bea', action: 'fund.add' });
       assert.deepEqual((await store.activity('org-a')).map((a) => a.action), ['entry.add', 'fund.add']);
       assert.equal((await store.activity('org-b')).length, 1);
+    } finally { await store.close(); }
+  });
+  test(`${name}: an intake keeps what was read, its shape and its rounds, inside its organization`, async () => {
+    const store = await open();
+    try {
+      const files = [{ name: 'qb.csv', kind: 'sheet', sheets: [{ id: 'S1', name: '', rows: [['Date', 'Amount'], ['2026-01-02', '5.00']] }] }, { name: 'award.pdf', kind: 'document', id: 'D1', text: 'Award of $5,000', pages: 1 }];
+      const a = await store.createIntake('org-a', { id: id(), files, created_by: 'Ray', created_by_id: 'u-ray' });
+      assert.equal(a.status, 'reading');
+      assert.deepEqual(a.files, files);
+      assert.equal(a.shape, null);
+      assert.deepEqual([a.questions, a.answers, a.rounds, a.cleared, a.result], [[], {}, [], 0, null]);
+      assert.equal(await store.getIntake('org-b', a.id), null, 'another organization cannot read it');
+      assert.equal(await store.updateIntake('org-b', a.id, { status: 'x' }), null, 'or change it');
+      const shape = { summary: 'One sheet.', funds: [], sheets: [], questions: [] };
+      const u = await store.updateIntake('org-a', a.id, { status: 'asking', shape, questions: [{ id: 'Q1', ask: 'Which?', options: ['A', 'B'], recommended: 0 }], answers: { Q1: 1 }, note: 'ok', rounds: [{ n: 1, clear: true }], cleared: 1, message: 'm', result: { added: 2 } });
+      assert.equal(u.status, 'asking');
+      assert.deepEqual(u.shape, shape);
+      assert.deepEqual(u.answers, { Q1: 1 });
+      assert.deepEqual(u.rounds, [{ n: 1, clear: true }]);
+      assert.equal(u.cleared, 1);
+      assert.deepEqual(u.result, { added: 2 });
+      assert.deepEqual(u.files, files, 'files untouched');
+      await new Promise((r) => setTimeout(r, 5));
+      const b = await store.createIntake('org-a', { id: id(), files: [] });
+      await store.createIntake('org-b', { id: id(), files });
+      const list = await store.listIntakes('org-a');
+      assert.deepEqual(list.map((x) => x.id), [b.id, a.id], 'newest first');
+      assert.equal(list[1].files, undefined, 'the list leaves the files out');
+      assert.deepEqual(list[1].file_names, ['qb.csv', 'award.pdf']);
     } finally { await store.close(); }
   });
 }

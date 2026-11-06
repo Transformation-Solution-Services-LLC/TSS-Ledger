@@ -6,6 +6,7 @@ const $ = (sel, root = document) => root.querySelector(sel);
 
 import { esc, day, when, KIND, STATUS, PACE, money, pct, monthLabel, launchRoute } from './util.js';
 import { mountImporter } from './importer.js';
+import { mountPile } from './pile.js';
 import { tssNav } from './tss-nav.js';
 
 const state = { token: null, name: '', org: '', canManage: false, me: null, today: new Date().toISOString().slice(0, 10) };
@@ -371,16 +372,22 @@ async function showImport() {
   if (!state.canManage) { $('#view').innerHTML = '<p class="error">Importing is for Ledger managers.</p>'; return; }
   const { funds } = await api('/api/funds');
   const p = params();
-  const kind = p.get('kind') === 'budget' ? 'budget' : 'spend';
+  const asked = p.get('kind');
+  const kind = asked === 'budget' || asked === 'spend' || asked === 'pile' ? asked : (state.me.reads_files ? 'pile' : 'spend');
   const chosen = p.get('fund') || '';
   const pick = (label, required) => `<label class="fund-pick"><span>${esc(label)}</span><select id="fund">${required ? '<option value="">Choose</option>' : '<option value="">None: the sheet names each row\'s fund</option>'}${funds.map((f) => `<option value="${esc(f.id)}" ${chosen === f.id ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</select></label>`;
+  const keep = chosen ? `&fund=${esc(chosen)}` : '';
   $('#view').innerHTML = `
     <div class="head"><h2>Import</h2></div>
-    <div class="tabs" role="tablist"><a href="#/import?kind=spend${chosen ? `&fund=${esc(chosen)}` : ''}" aria-selected="${kind === 'spend'}">Spending</a><a href="#/import?kind=budget${chosen ? `&fund=${esc(chosen)}` : ''}" aria-selected="${kind === 'budget'}">A grant's budget</a></div>
-    ${kind === 'spend'
-      ? `<p class="muted">From QuickBooks, run Reports, Transaction Detail by Account, and export it to Excel, then save it as CSV. A bank or card export works too. Rows already imported are skipped.</p>${pick('Fund for rows that name none', false)}`
-      : `<p class="muted">One row per budget line with its amount. A line already on the budget takes the sheet's amount.</p>${pick('Grant or fund', true)}`}
-    ${funds.length ? '<div id="importer"></div>' : '<p class="empty">Add a grant or fund first: <a href="#/funds">Grants and funds</a>.</p>'}`;
+    <div class="tabs" role="tablist"><a href="#/import?kind=pile" aria-selected="${kind === 'pile'}">A pile of files</a><a href="#/import?kind=spend${keep}" aria-selected="${kind === 'spend'}">Spending</a><a href="#/import?kind=budget${keep}" aria-selected="${kind === 'budget'}">A grant's budget</a></div>
+    ${kind === 'pile' ? '<div id="pile"></div>' : kind === 'spend'
+    ? `<p class="muted">From QuickBooks, run Reports, Transaction Detail by Account, and export it to Excel, then save it as CSV. A bank or card export works too. Rows already imported are skipped.</p>${pick('Fund for rows that name none', false)}`
+    : `<p class="muted">One row per budget line with its amount. A line already on the budget takes the sheet's amount.</p>${pick('Grant or fund', true)}`}
+    ${kind === 'pile' ? '' : funds.length ? '<div id="importer"></div>' : '<p class="empty">Add a grant or fund first: <a href="#/funds">Grants and funds</a>, or upload <a href="#/import?kind=pile">a pile of files</a>.</p>'}`;
+  if (kind === 'pile') {
+    mountPile($('#pile'), { api, id: p.get('intake') || '', go: (id) => { location.hash = `#/import?kind=pile&intake=${encodeURIComponent(id)}`; }, done: () => toast('Imported.') });
+    return;
+  }
   if (!funds.length) return;
   $('#fund').addEventListener('change', (e) => { const u = new URLSearchParams(location.hash.split('?')[1] || ''); u.set('fund', e.target.value); history.replaceState(null, '', `#/import?${u}`); });
   mountImporter($('#importer'), {

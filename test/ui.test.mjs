@@ -33,7 +33,7 @@ test('upper left of every screen: TSS wordmark, the Ledger icon, the name, Wally
 });
 
 test('interface text has no em dash and does not call the app TSS-anything', () => {
-  for (const f of ['index.html', 'app.js', 'styles.css', 'importer.js', 'util.js']) {
+  for (const f of ['index.html', 'app.js', 'styles.css', 'importer.js', 'pile.js', 'util.js']) {
     const text = src(f);
     assert.ok(!text.includes('—'), `${f} has an em dash`);
     assert.doesNotMatch(text, /TSS-\w/, `${f} names an app TSS-something`);
