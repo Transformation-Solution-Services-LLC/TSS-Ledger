@@ -99,8 +99,8 @@ label > span { display: block; color: var(--text-2); margin-bottom: .2rem; }
 .list th, .list td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
 .list th { background: var(--sunken); color: var(--text-2); font-weight: 600; font-size: .82rem; }
 .list tr:last-child td { border-bottom: 0; }
-.list tr[data-href] { cursor: pointer; }
-.list tr[data-href]:hover td { background: var(--primary-subtle); }
+.list tr[data-href], .list tr[data-open] { cursor: pointer; }
+.list tr[data-href]:hover td, .list tr[data-open]:hover td { background: var(--primary-subtle); }
 .list td.num, .list th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .list .tools { white-space: nowrap; text-align: right; }
 
@@ -199,3 +199,15 @@ input[type="file"]::file-selector-button:hover { background: var(--primary-subtl
 }
 .wally-splash img { width: min(280px, 64vw); height: auto; display: block; }
 @keyframes wally-splash-out { 0%, 85% { opacity: 1; } 100% { opacity: 0; } }
+
+/* A pile of files (pile.js) */
+.pile-drop { border-style: dashed; }
+.pile-drop.over { border-color: var(--primary); background: var(--primary-subtle); }
+.question { border: 1px solid var(--border); border-radius: 8px; padding: .5rem .8rem .7rem; margin: 0 0 .8rem; }
+.question legend { font-weight: 600; padding: 0 .3rem; }
+.question label { display: flex; gap: .5rem; align-items: center; margin-top: .35rem; cursor: pointer; }
+.question input[type=radio] { width: auto; margin: 0; }
+.note { display: block; margin: .6rem 0; }
+.note span { display: block; margin-bottom: .3rem; }
+.rounds { margin: .4rem 0 .8rem; padding-left: 1.2rem; }
+.rounds li { margin: .15rem 0; }

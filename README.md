@@ -24,7 +24,33 @@ activity log.
 
 ## Importing
 
-Import (managers, `#/import`, which Cockpit opens directly) takes a CSV in
+**A pile of files** (the first tab of Import) takes every spreadsheet and
+document a manager has at once: Excel workbooks with many tabs, CSV,
+QuickBooks or bank exports, budgets, award letters as PDF, Word or text.
+
+1. Ledger reads the files (`services/extract.js`); nothing but their cells
+   and text is kept.
+2. Claude Opus 5.5 proposes the shape (`services/sense.js`): which sheet is
+   spending, a budget or neither, the header row, which column is which,
+   which grant each row belongs to, the grants themselves. It asks at most
+   three multiple-choice questions, only where a wrong guess would put money
+   on the wrong grant or count it twice.
+3. Ledger reads every figure itself through that shape (`lib/shape.js`) and
+   shows the person the grants, each file, the first entries and every row
+   left out. An award is kept only when its quote is in the document.
+4. The person answers and accepts. Then other models check the same path
+   against the files: any mistake is fixed by the drafter and the count
+   starts over. Done when three different models clear the same draft
+   (Claude Sonnet 5.5, Opus 5, Fable 5.1, with Haiku 5.5 as the spare; the
+   drafter never checks itself), or after ten checks, when the person is
+   told the checks did not settle and may import anyway.
+5. Import saves new grants, budget lines and spending with the CSV
+   importer's keys, so the same rows are never added twice.
+
+Each Claude call counts against the organization's monthly AI limit in
+Cockpit (`lib/usage.js`). Without `ANTHROPIC_API_KEY` the tab says it is off.
+
+**Spending** and **A grant's budget** take one CSV in
 three steps: Ledger guesses which column fills which field, the person
 changes any match, and a check lists every row before anything is saved.
 

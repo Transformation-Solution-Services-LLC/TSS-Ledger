@@ -36,8 +36,13 @@ import { publicErrorBody, logSafeError, normalizePublicError, requestContext, Pu
 import { errorReporter, installCrashHandlers } from './lib/error-tracking.js';
 import { openStore } from './lib/store.js';
 import { toCsv } from './lib/csv.js';
-import { readSheet, cleanMapping, mappedRows, previewOf, nameKey, readDay, MAX_ROWS } from './lib/import-map.js';
+import { readSheet, cleanMapping, mappedRows, previewOf, nameKey, readDay, readMoney, MAX_ROWS } from './lib/import-map.js';
+
+export { readMoney };
 import * as rollodexApi from './lib/rollodex.js';
+import { intakeRoutes } from './lib/intakes.js';
+import { createUsageClient } from './lib/usage.js';
+import * as senseApi from './services/sense.js';
 import {
   FUND_KINDS, FUND_STATUSES, isDay, today, round2, toCents, usd,
   fundSummary, summarizeFunds, totals, rollup, needsYou, serviceView,
@@ -54,21 +59,6 @@ export const APP_NAME = 'Ledger';
 const EXPORT_ACTIVITY_LIMIT = 100000;
 const MAX_AMOUNT = 1e11;
 
-// "$1,250.50", "1250.5", "(300.00)" or "-300" as a number; anything else null.
-export function readMoney(v) {
-  if (typeof v === 'number') return Number.isFinite(v) ? round2(v) : null;
-  let s = String(v ?? '').trim();
-  if (!s) return null;
-  let neg = false;
-  if (/^\(.*\)$/.test(s)) { neg = true; s = s.slice(1, -1).trim(); }
-  if (s.startsWith('-')) { neg = !neg; s = s.slice(1).trim(); }
-  if (s.endsWith('-')) { neg = !neg; s = s.slice(0, -1).trim(); }
-  s = s.replace(/^(USD|US\$|\$)\s*/i, '').replace(/,/g, '').replace(/\s/g, '');
-  if (!/^\d+(\.\d+)?$|^\.\d+$/.test(s)) return null;
-  const n = round2(Number(s));
-  return neg ? -n : n;
-}
-
 export function createApp({
   store,
   verifyTicket = createTicketVerifier({ audience: 'ledger' }),
@@ -76,6 +66,10 @@ export function createApp({
   cockpitLink = createCockpitLink({ audience: 'ledger', canEnter: CAN_ENTER }),
   clock = () => today(),
   rollodex = rollodexApi,
+  // A pile of files made sense of (lib/intakes.js, services/sense.js).
+  sense = senseApi,
+  senseDeps = {},
+  usage = createUsageClient(),
 } = {}) {
   if (!store) throw new Error('createApp needs a store');
   const app = express();
@@ -89,8 +83,11 @@ export function createApp({
     if (_req.path.startsWith('/api/')) res.setHeader('Cache-Control', 'no-store');
     next();
   });
-  // A year of transactions as CSV stays well under this.
-  app.use(express.json({ limit: '8mb' }));
+  // A year of transactions as CSV stays well under 8 MB. A pile of files
+  // (base64, up to 40 MB of files) has its own, larger limit.
+  const smallJson = express.json({ limit: '8mb' });
+  const pileJson = express.json({ limit: '56mb' });
+  app.use((req, res, next) => (req.method === 'POST' && req.path === '/api/intakes' ? pileJson : smallJson)(req, res, next));
 
   const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
   app.locals.cockpitLink = cockpitLink;
@@ -170,7 +167,7 @@ export function createApp({
   app.get('/api/health', wrap(async (_req, res) => {
     let db = true;
     try { await store.ping(); } catch (_) { db = false; }
-    res.status(db ? 200 : 503).json({ ok: db, app: APP_NAME, store: store.kind, db, cockpit_url: cockpitUrl(), dev_signin: devSignInEnabled(), rollodex: rollodex.rollodexConfigured() });
+    res.status(db ? 200 : 503).json({ ok: db, app: APP_NAME, store: store.kind, db, cockpit_url: cockpitUrl(), dev_signin: devSignInEnabled(), rollodex: rollodex.rollodexConfigured(), reads_files: sense.configured() });
   }));
 
   app.get('/api/me', requireUser, (req, res) => {
@@ -178,6 +175,7 @@ export function createApp({
       id: req.user.id, name: req.user.name, org: { id: req.user.org_id, name: req.user.org_name }, can_manage: req.user.can_manage,
       options: { kinds: FUND_KINDS, statuses: FUND_STATUSES },
       rollodex: rollodex.rollodexConfigured() ? rollodex.rollodexUrl() : '',
+      reads_files: sense.configured(),
       today: clock(),
       release: RELEASE,
     });
@@ -616,6 +614,8 @@ export function createApp({
     if (!dry) audit(req, 'import.budget', fund.name, `${result.added} added, ${result.updated} updated, ${usd(result.total)}`);
     res.json(result);
   }));
+
+  intakeRoutes(app, { store, wrap, requireManager, audit, clock, usage, sense, senseDeps, isId });
 
   app.get('/api/activity', requireManager, wrap(async (req, res) => {
     res.json({ activity: await store.activity(req.user.org_id, Math.min(Number(req.query.limit) || 100, 500)) });
