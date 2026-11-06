@@ -304,7 +304,7 @@ async function showFund(id) {
       ${fact('Days left', s.days_left !== null ? String(s.days_left) : '')}
       ${fact('At this rate, by the end', s.projected_spend !== null && s.end_on ? `${esc(money(s.projected_spend))} spent, ${esc(money(s.projected_left))} left` : '')}
       ${fact('Money lasts', s.runway_months ? `${esc(String(s.runway_months))} months at this rate` : '')}
-      ${fact('Funder in Rollodex', s.rollodex_url ? `<a href="${esc(s.rollodex_url)}" target="_blank" rel="noopener">Open</a>` : '')}
+      ${fact('Funder in Rollodex', s.rollodex_url ? `<a href="${esc(s.rollodex_url)}">Open</a>` : '')}
     </div>
     ${s.lines_differ_from_award ? `<p class="notice">The budget lines add up to ${esc(money(s.budget))}, not the award of ${esc(money(s.award))}.</p>` : ''}
     <div class="head sub"><h3>Budget against spending</h3>${state.canManage ? `<div class="row"><button class="small" id="add-line">Add a line</button><a class="small-text" href="#/import?fund=${esc(s.id)}&kind=budget">Import the budget</a></div>` : ''}</div>
