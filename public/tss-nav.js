@@ -1,5 +1,6 @@
-// The TSS top strip: Back on the left, Cockpit on the right. The same file in
-// every TSS app; change it in one, copy it to all.
+// The TSS top strip: Back on the left, the light/dark switch and Cockpit on
+// the right. The same file in every TSS app; change it in one, copy it to all.
+// The switch needs tss-theme.js in the page's <head>.
 //
 // Back goes to the screen before this one inside the app. With nothing before
 // it, Back goes to the app's home, and from the home to Cockpit. Cockpit opens
@@ -10,9 +11,11 @@
 //   nav.visit('sources', () => show('sources'));                     //   name each screen as it opens
 //   tssNav({ ..., before: () => closeOverlay() })                   // Back closes what is open over the screen first (true = done)
 //   nav.setCockpitUrl(url);                                          // once the server says where Cockpit is
-//   nav.setLabels({ back: 'Atrás', backToCockpit: 'Volver a Cockpit' }); // the page's language, when not English
+//   nav.setLabels({ back: 'Atrás', backToCockpit: 'Volver a Cockpit', dark: 'Oscuro', light: 'Claro' }); // the page's language
 
 const BACK_ICON = 'M15 5l-7 7 7 7';
+const MOON_ICON = 'M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z';
+const SUN_ICON = 'M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z';
 const KEY = 'tss.nav.stack';
 
 function el(tag, attrs = {}, kids = []) {
@@ -36,7 +39,7 @@ function icon(d) {
 // The screen part of an address, without Cockpit's one-time sign-in parts.
 export function screenKey(hash) {
   const h = String(hash || '').replace(/^#/, '')
-    .replace(/&?tss_(launch|to)=[^&]*/g, '').replace(/^&/, '').replace(/&$/, '');
+    .replace(/&?tss_(launch|to|theme)=[^&]*/g, '').replace(/^&/, '').replace(/&$/, '');
   return h === '' || h === '/' ? '/' : h;
 }
 
@@ -61,20 +64,38 @@ export function tssNav({ mount, home, isHome, goHome, before, cockpitUrl = null,
   let cockpit = cockpitUrl;
   let stack = hashMode ? loadStack() : [];   // hash mode: keys; view mode: { key, open }
 
-  const words = { back: 'Back', backToCockpit: 'Back to Cockpit', ...labels };
+  const words = { back: 'Back', backToCockpit: 'Back to Cockpit', dark: 'Dark mode', light: 'Light mode', ...labels };
   const backText = el('span', {}, [words.back]);
   const back = el('button', { type: 'button', class: 'tss-nav-back' }, [icon(BACK_ICON), backText]);
   const toCockpit = el('a', { class: 'tss-nav-cockpit', href: '/' }, ['Cockpit']);
-  const bar = el('div', { class: 'tss-nav', role: 'navigation', 'aria-label': 'Back and Cockpit' }, [back, el('span', { class: 'tss-nav-gap' }), toCockpit]);
+  // Light/dark: one press switches; the choice follows the person to Cockpit
+  // and from there to every app (tss-theme.js).
+  const themes = typeof window !== 'undefined' ? window.tssTheme : null;
+  const themeText = el('span', {}, []);
+  const theme = el('button', { type: 'button', class: 'tss-nav-theme' }, []);
+  const paintTheme = () => {
+    const dark = themes?.get() === 'dark';
+    theme.setAttribute('aria-pressed', String(dark));
+    theme.title = dark ? words.light : words.dark;
+    theme.setAttribute('aria-label', theme.title);
+    themeText.textContent = dark ? words.light : words.dark;
+    theme.replaceChildren(icon(dark ? SUN_ICON : MOON_ICON), themeText);
+  };
+  theme.hidden = !themes;
+  theme.addEventListener('click', () => themes?.toggle());
+  const bar = el('div', { class: 'tss-nav', role: 'navigation', 'aria-label': 'Back and Cockpit' }, [back, el('span', { class: 'tss-nav-gap' }), theme, toCockpit]);
   bar.hidden = framed;   // inside Cockpit's own window, Cockpit is already around it
   if (mount) mount.prepend(bar);
 
   const atHome = () => { try { return hashMode ? homes.includes(screenKey(location.hash)) : Boolean(isHome?.()); } catch { return false; } };
-  const openCockpit = () => { if (cockpit) location.assign(cockpit); };
+  const carry = (url) => (themes ? themes.carry(url) : url);
+  const openCockpit = () => { if (cockpit) location.assign(carry(cockpit)); };
 
   function refresh() {
     toCockpit.hidden = framed || !cockpit;
-    if (cockpit) toCockpit.href = cockpit;
+    if (cockpit) toCockpit.href = carry(cockpit);
+    theme.hidden = framed || !themes;   // inside Cockpit, Cockpit's own switch sets it
+    paintTheme();
     const depth = stack.length > 1;
     const leaves = !depth && atHome();
     back.hidden = framed || (leaves && !cockpit);   // nowhere to go back to
@@ -111,11 +132,13 @@ export function tssNav({ mount, home, isHome, goHome, before, cockpitUrl = null,
     openCockpit();
   });
 
+  themes?.onChange(() => refresh());
   refresh();
   return {
     el: bar,
-    // For an app with its own header: place these two where they belong.
+    // For an app with its own header: place these where they belong.
     back,
+    theme,
     cockpit: toCockpit,
     // Screens without addresses: call as each one opens. Opening the screen
     // already on top (Back reopening it, a refresh) changes nothing.
@@ -132,7 +155,7 @@ export function tssNav({ mount, home, isHome, goHome, before, cockpitUrl = null,
     // Start over, as after signing in: the screen now open is the first.
     reset() { stack = hashMode ? [screenKey(location.hash)] : stack.slice(-1); if (hashMode) saveStack(stack); refresh(); },
     setCockpitUrl(url) { cockpit = url || null; refresh(); },
-    // Other languages: { back, backToCockpit }. Cockpit is a name and stays.
+    // Other languages: { back, backToCockpit, dark, light }. Cockpit is a name and stays.
     setLabels(l) { Object.assign(words, l || {}); refresh(); },
     refresh,
   };
