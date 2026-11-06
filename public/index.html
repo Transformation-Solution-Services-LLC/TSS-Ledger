@@ -12,11 +12,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Ledger">
   <link rel="stylesheet" href="/styles.css">
+  <script src="/brand/splash.js"></script>
 </head>
 <body>
+  <div class="wally-splash" aria-hidden="true"><img src="/brand/wally-ledger.svg" alt=""></div>
   <div id="login" class="login" hidden>
     <div class="card login-card">
-      <h1 class="brandbar brandbar-login"><picture><source srcset="/brand/tss-wordmark-light.webp" media="(prefers-color-scheme: dark)"><img class="brandbar-tss" src="/brand/tss-wordmark.webp" alt="TSS"></picture><img class="brandbar-icon" src="/brand/ledger.png" alt=""><span class="brandbar-name">Ledger</span><img class="brandbar-wally" src="/brand/wally.webp" alt="Wally, the TSS robot"></h1>
+      <h1 class="brandbar brandbar-login"><picture><source srcset="/brand/tss-wordmark-light.webp" media="(prefers-color-scheme: dark)"><img class="brandbar-tss" src="/brand/tss-wordmark.webp" alt="TSS"></picture><img class="brandbar-icon" src="/brand/ledger.png" alt=""><span class="brandbar-name">Ledger</span><img class="brandbar-wally" src="/brand/wally-ledger-still.svg" alt="Wally, the TSS robot"></h1>
       <p class="muted">What each grant has, has spent and has left.</p>
       <p id="login-message">Open Ledger from Cockpit to sign in.</p>
       <button id="cockpit-link" type="button" class="primary" hidden>Go to Cockpit</button>
@@ -27,7 +29,7 @@
 
   <div id="app" class="shell" hidden>
     <aside class="side">
-      <a class="brandbar" href="#/"><picture><source srcset="/brand/tss-wordmark-light.webp" media="(prefers-color-scheme: dark)"><img class="brandbar-tss" src="/brand/tss-wordmark.webp" alt="TSS"></picture><img class="brandbar-icon" src="/brand/ledger.png" alt=""><span class="brandbar-name">Ledger</span><img class="brandbar-wally" src="/brand/wally.webp" alt="Wally, the TSS robot"></a>
+      <a class="brandbar" href="#/"><picture><source srcset="/brand/tss-wordmark-light.webp" media="(prefers-color-scheme: dark)"><img class="brandbar-tss" src="/brand/tss-wordmark.webp" alt="TSS"></picture><img class="brandbar-icon" src="/brand/ledger.png" alt=""><span class="brandbar-name">Ledger</span><img class="brandbar-wally" src="/brand/wally-ledger-still.svg" alt="Wally, the TSS robot"></a>
       <nav class="nav" aria-label="Ledger">
         <a href="#/" data-view="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11L12 4l8.5 7v9h-5.5v-5.5h-6V20H3.5z"/></svg><span>Overview</span></a>
         <a href="#/funds" data-view="funds"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v12H4z"/><path d="M8 7V4.5h8V7M4 12h16"/></svg><span>Grants</span></a>
