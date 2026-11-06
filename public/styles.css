@@ -60,11 +60,11 @@ label > span { display: block; color: var(--text-2); margin-bottom: .2rem; }
 .brandbar-tss { height: 20px; }
 .brandbar-icon { height: 28px; border-radius: 6px; }
 .brandbar-name { font-weight: 800; color: var(--primary); font-size: 1.15rem; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.brandbar-wally { height: 34px; }
+.brandbar-wally { height: 60px; width: auto; }
 .brandbar-login .brandbar-tss { height: 24px; }
 .brandbar-login .brandbar-icon { height: 34px; }
 .brandbar-login .brandbar-name { font-size: 1.5rem; }
-.brandbar-login .brandbar-wally { height: 44px; }
+.brandbar-login .brandbar-wally { height: 96px; }
 .nav { display: flex; flex-direction: column; gap: .25rem; }
 .nav a { display: block; text-decoration: none; color: var(--text); padding: .5rem .6rem; border-radius: 8px; }
 .nav a:hover { background: var(--surface); }
