@@ -1,12 +1,12 @@
-// The opening screen: this app's Wally scene, full screen, once per browser
-// tab, gone in under 3 seconds. Runs before the page draws so it never
-// flashes. Skipped when the reader asks for reduced motion.
+// The opening scene: plays each time a person arrives from Cockpit or another
+// app, never on a reload or a page change inside this app. At most 2.8 seconds.
 (function () {
   try {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (sessionStorage.getItem('tss:wally-splash')) return;
-    sessionStorage.setItem('tss:wally-splash', '1');
-  } catch (e) { /* storage refused: show it, it is short */ }
+    var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+    if (nav && (nav.type === 'reload' || nav.type === 'back_forward')) return;
+    if (document.referrer && new URL(document.referrer).origin === location.origin) return;
+  } catch (e) {}
   var root = document.documentElement;
   root.classList.add('wally-splash-on');
   setTimeout(function () { root.classList.remove('wally-splash-on'); }, 2800);
