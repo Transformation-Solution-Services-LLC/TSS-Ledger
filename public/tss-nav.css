@@ -1,18 +1,19 @@
-/* The TSS top strip (tss-nav.js): Back on the left, Cockpit on the right.
+/* The TSS top strip (tss-nav.js): Back on the left, light/dark and Cockpit on the right.
    The same file in every TSS app; clay buttons in DM Sans. */
 :root { --tss-clay: #A9512F; --tss-clay-subtle: #F7E7E0; --tss-clay-ink: #FFFFFF; }
-@media (prefers-color-scheme: dark) { :root { --tss-clay: #E99073; --tss-clay-subtle: #3A2A25; --tss-clay-ink: #1B1410; } }
+:root[data-theme="dark"] { --tss-clay: #E99073; --tss-clay-subtle: #3A2A25; --tss-clay-ink: #1B1410; }
 .tss-nav { display: flex; align-items: center; gap: .5rem; margin: 0 0 1rem; font-family: "DM Sans", system-ui, sans-serif; }
 .tss-nav[hidden], .tss-nav [hidden] { display: none !important; }
 .tss-nav-gap { flex: 1; }
-.tss-nav-back, .tss-nav-cockpit {
+.tss-nav-back, .tss-nav-theme, .tss-nav-cockpit {
   display: inline-flex; align-items: center; gap: .3rem; min-height: 36px; padding: .35rem .85rem;
   border-radius: 8px; font: 600 .9rem/1.2 "DM Sans", system-ui, sans-serif; cursor: pointer; text-decoration: none;
 }
-.tss-nav-back { background: var(--surface, #fff); color: var(--tss-clay); border: 1px solid var(--tss-clay); }
-.tss-nav-back:hover { background: var(--tss-clay-subtle); }
-.tss-nav-back svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.tss-nav-back, .tss-nav-theme { background: var(--surface, #fff); color: var(--tss-clay); border: 1px solid var(--tss-clay); }
+.tss-nav-back:hover, .tss-nav-theme:hover { background: var(--tss-clay-subtle); }
+.tss-nav-back svg, .tss-nav-theme svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .tss-nav-cockpit { background: var(--tss-clay); color: var(--tss-clay-ink); border: 1px solid var(--tss-clay); }
 .tss-nav-cockpit:hover { filter: brightness(1.08); color: var(--tss-clay-ink); text-decoration: none; }
-.tss-nav-back:focus-visible, .tss-nav-cockpit:focus-visible { outline: 2px solid var(--focus, #1F6FB2); outline-offset: 2px; }
+.tss-nav-back:focus-visible, .tss-nav-theme:focus-visible, .tss-nav-cockpit:focus-visible { outline: 2px solid var(--focus, #1F6FB2); outline-offset: 2px; }
+@media (max-width: 520px) { .tss-nav-theme span { display: none; } .tss-nav-theme { padding: .35rem .6rem; } }
 @media print { .tss-nav { display: none; } }
