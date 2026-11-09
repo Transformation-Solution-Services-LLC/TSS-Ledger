@@ -30,14 +30,14 @@ export function kindOf(name, type = '') {
   if (['xlsx', 'xlsm'].includes(ext)) return 'xlsx';
   if (ext === 'pdf') return 'pdf';
   if (ext === 'docx') return 'docx';
-  if (['txt', 'text', 'md'].includes(ext)) return 'text';
+  if (['txt', 'text', 'md', 'markdown', 'mdown', 'mkd', 'mkdn', 'mdx'].includes(ext)) return 'text';
   if (ext === 'xls') return 'xls';
   const t = String(type || '').toLowerCase();
   if (t.includes('csv')) return 'csv';
   if (t.includes('pdf')) return 'pdf';
   if (t.includes('spreadsheetml')) return 'xlsx';
   if (t.includes('wordprocessingml')) return 'docx';
-  if (t.startsWith('text/')) return 'text';
+  if (t.startsWith('text/') || t.includes('markdown')) return 'text';
   return '';
 }
 
