@@ -81,6 +81,9 @@ test('spreadsheets and documents are read from their bytes', async () => {
   assert.equal(kindOf('a.CSV'), 'csv');
   assert.equal(kindOf('b.xlsx'), 'xlsx');
   assert.equal(kindOf('c'), '');
+  for (const n of ['notes.md', 'NOTES.MD', 'notes.markdown']) assert.equal(kindOf(n, 'application/octet-stream'), 'text', n);
+  assert.equal(kindOf('notes', 'text/x-markdown'), 'text');
+  assert.equal((await readFile({ name: 'award.md', type: '', data: Buffer.from('# Award\n\nThe grant is $50,000.') })).text, '# Award\n\nThe grant is $50,000.');
   assert.equal(cellText(new Date(Date.UTC(2026, 2, 31))), '2026-03-31');
   assert.equal(cellText({ formula: 'A1+A2', result: 0.1 + 0.2 }), '0.3');
   const wb = new ExcelJS.Workbook();

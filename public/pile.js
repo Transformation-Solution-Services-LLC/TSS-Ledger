@@ -36,7 +36,7 @@ export function mountPile(root, { api, id = '', go, done = () => {} }) {
     root.innerHTML = `
       <p class="muted">Upload every spreadsheet and document you have for your grants: QuickBooks or bank exports, budgets, award letters, Excel workbooks with many tabs. Ledger works out what each one is, asks only what it cannot tell, has its reading checked three separate times, and shows you everything before anything is saved.</p>
       <div class="card pile-drop" data-drop>
-        <p><label class="file-pick">Choose files <input type="file" multiple accept=".xlsx,.xlsm,.csv,.tsv,.txt,.pdf,.docx" data-files></label>
+        <p><label class="file-pick">Choose files <input type="file" multiple accept=".xlsx,.xlsm,.csv,.tsv,.txt,.md,.markdown,.pdf,.docx,text/markdown" data-files></label>
         <span class="muted" data-chosen>Excel, CSV, PDF, Word or text. Up to 25 files.</span></p>
         <p class="row"><button type="button" class="primary" data-read disabled>Read these files</button><span class="status" data-status></span></p>
       </div>
