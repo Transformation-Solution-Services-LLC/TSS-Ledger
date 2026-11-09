@@ -188,15 +188,6 @@ input[type="file"] { padding: .35rem .4rem; color: var(--muted); }
 input[type="file"]::file-selector-button { font: inherit; color: var(--text); background: var(--sunken); border: 1px solid var(--border); border-radius: 6px; padding: .35rem .8rem; margin-right: .75rem; cursor: pointer; }
 input[type="file"]::file-selector-button:hover { background: var(--primary-subtle); color: var(--primary); }
 
-/* The opening screen (brand/splash.js): this app's Wally scene, under 3 seconds. */
-.wally-splash { display: none; }
-.wally-splash-on .wally-splash {
-  display: grid; place-items: center; position: fixed; inset: 0; z-index: 9999;
-  background: var(--bg); pointer-events: none;
-  animation: wally-splash-out 2.8s ease-in forwards;
-}
-.wally-splash img { width: min(280px, 64vw); height: auto; display: block; }
-@keyframes wally-splash-out { 0%, 85% { opacity: 1; } 100% { opacity: 0; } }
 
 /* A pile of files (pile.js) */
 .pile-drop { border-style: dashed; }
