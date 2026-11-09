@@ -29,7 +29,8 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { requireUser, requireManager, requireService, requireExport, sessionFor, devSignInEnabled } from './lib/auth.js';
+import { requireUser, requireManager, requireService, requireExport, sessionFor, devSignInEnabled, serviceTokenMatches } from './lib/auth.js';
+import { runLiveChecks, checkClaude, checkComposio, checkTssApp } from './lib/live-check.js';
 import { createTicketVerifier, cockpitUrl, frameHeaders } from './lib/cockpit.js';
 import { createCockpitLink } from './lib/cockpit-link.js';
 import { publicErrorBody, logSafeError, normalizePublicError, requestContext, PublicError } from './lib/public-error.js';
@@ -162,6 +163,25 @@ export function createApp({
   app.post('/api/auth/dev', (_req, res) => {
     if (!devSignInEnabled()) return res.status(404).json({ error: 'No such endpoint', code: 'not_found' });
     res.json(signedIn({ sub: 'dev', name: 'Developer', org: { id: 'dev', name: 'Development' }, permissions: ['use', 'manage'] }));
+  });
+
+  // Every outside service, each asked for real (lib/live-check.js): status
+  // words only, remembered a few minutes so this page cannot run up calls.
+  app.get('/api/health/live', wrap(async (_req, res) => {
+    const env = process.env;
+    res.setHeader('Cache-Control', 'no-store');
+    res.json(await runLiveChecks({
+      claude: checkClaude({ key: env.ANTHROPIC_API_KEY, model: senseApi.drafter() }),
+      ...Object.fromEntries(senseApi.reviewers().filter((m) => /^claude-/.test(m)).map((m) => [`reviewer:${m}`, checkClaude({ key: env.ANTHROPIC_API_KEY, model: m })])),
+    }));
+  }));
+
+  // Another TSS app checking the service token it holds for Ledger.
+  app.get('/api/service/ping', (req, res) => {
+    const h = String(req.headers.authorization || '');
+    const token = h.startsWith('Bearer ') ? h.slice(7) : '';
+    if (!token || !serviceTokenMatches(token)) return res.status(401).json({ error: 'Service token required', code: 'authentication_required' });
+    return res.json({ ok: true });
   });
 
   app.get('/api/health', wrap(async (_req, res) => {
