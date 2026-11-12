@@ -11,7 +11,7 @@ const stores = [['memory', async () => new MemoryStore().init()]];
 if (process.env.TEST_DATABASE_URL) {
   stores.push(['postgres', async () => {
     const s = await new PostgresStore(process.env.TEST_DATABASE_URL).init();
-    await s.q('TRUNCATE ledger_quickbooks, ledger_intakes, ledger_activity, ledger_entries, ledger_lines, ledger_funds');
+    await s.q('TRUNCATE ledger_quickbooks, ledger_data_chats, ledger_datasets, ledger_intakes, ledger_activity, ledger_entries, ledger_lines, ledger_funds');
     return s;
   }]);
 }
@@ -140,6 +140,56 @@ for (const [name, open] of stores) {
       assert.deepEqual(list.map((x) => x.id), [b.id, a.id], 'newest first');
       assert.equal(list[1].files, undefined, 'the list leaves the files out');
       assert.deepEqual(list[1].file_names, ['qb.csv', 'award.pdf']);
+    } finally { await store.close(); }
+  });
+
+  test(`${name}: a dataset keeps its tables, lists without rows, and belongs to its organization and owner`, async () => {
+    const store = await open();
+    try {
+      const tables = [{ name: 'qb', columns: [{ name: 'Date', type: 'date' }, { name: 'Amount', type: 'money' }], rows: [['2026-01-02', 5.25], ['2026-01-03', null]], notes: ['One total row left out.'] }];
+      const a = await store.createDataset('org-a', { id: id(), owner_id: 'u-dana', owner_name: 'Dana', name: 'qb', files: ['qb.csv'], tables });
+      assert.equal(a.source, 'upload');
+      assert.deepEqual(a.tables, tables);
+      assert.deepEqual(a.files, ['qb.csv']);
+      assert.equal(await store.getDataset('org-b', a.id), null, 'another organization cannot read it');
+      assert.equal(await store.updateDataset('org-b', a.id, { name: 'x' }), null, 'or change it');
+      assert.equal(await store.deleteDataset('org-b', a.id), false, 'or delete it');
+      await new Promise((r) => setTimeout(r, 5));
+      const b = await store.createDataset('org-a', { id: id(), owner_id: 'u-ray', name: 'theirs', source: 'quickbooks', source_ref: 'realm-1', tables: [] });
+      await store.createDataset('org-b', { id: id(), owner_id: 'u-dana', name: 'other org', tables });
+      assert.deepEqual((await store.listDatasets('org-a')).map((d) => d.id), [b.id, a.id], 'newest first');
+      const mine = await store.listDatasets('org-a', { owner_id: 'u-dana' });
+      assert.deepEqual(mine.map((d) => d.id), [a.id]);
+      assert.deepEqual(mine[0].tables, [{ name: 'qb', columns: tables[0].columns, row_count: 2 }], 'the list gives each table without its rows');
+      assert.deepEqual((await store.listDatasets('org-a', { source: 'quickbooks' })).map((d) => d.source_ref), ['realm-1']);
+      assert.equal((await store.updateDataset('org-a', a.id, { name: 'Q1' })).name, 'Q1');
+      const c = await store.createChat('org-a', { id: id(), owner_id: 'u-dana', dataset_ids: [a.id, 'ledger'] });
+      assert.equal(await store.deleteDataset('org-a', a.id), true);
+      assert.equal(await store.getDataset('org-a', a.id), null);
+      assert.deepEqual((await store.getChat('org-a', c.id)).dataset_ids, ['ledger'], 'a deleted dataset leaves its chats');
+    } finally { await store.close(); }
+  });
+
+  test(`${name}: a data chat keeps its messages, lists by owner and dataset, and is deleted whole`, async () => {
+    const store = await open();
+    try {
+      const c = await store.createChat('org-a', { id: id(), owner_id: 'u-dana', owner_name: 'Dana', dataset_ids: ['ledger'] });
+      assert.deepEqual([c.title, c.status, c.messages, c.compaction, c.docs], ['New chat', 'idle', [], null, []]);
+      const messages = [{ role: 'user', text: 'How much?' }, { role: 'assistant', text: '$5.25', steps: [{ n: 1, kind: 'calc', value: 5.25 }] }];
+      const u = await store.updateChat('org-a', c.id, { title: 'How much?', messages, status: 'thinking', compaction: { summary: 's', through: 1 }, docs: [{ name: 'a.md', text: 'x' }] });
+      assert.deepEqual([u.title, u.status, u.messages, u.compaction, u.docs], ['How much?', 'thinking', messages, { summary: 's', through: 1 }, [{ name: 'a.md', text: 'x' }]]);
+      assert.equal(await store.getChat('org-b', c.id), null);
+      assert.equal(await store.updateChat('org-b', c.id, { title: 'x' }), null);
+      assert.equal(await store.deleteChat('org-b', c.id), false);
+      await new Promise((r) => setTimeout(r, 5));
+      const d = await store.createChat('org-a', { id: id(), owner_id: 'u-ray', dataset_ids: [] });
+      const list = await store.listChats('org-a', { owner_id: 'u-dana' });
+      assert.deepEqual(list.map((x) => [x.id, x.message_count, x.doc_names]), [[c.id, 2, ['a.md']]]);
+      assert.equal(list[0].messages, undefined, 'the list leaves the messages out');
+      assert.deepEqual((await store.listChats('org-a', { dataset_id: 'ledger' })).map((x) => x.id), [c.id]);
+      assert.deepEqual((await store.listChats('org-a')).map((x) => x.id), [d.id, c.id], 'latest first');
+      assert.equal(await store.deleteChat('org-a', c.id), true);
+      assert.equal(await store.getChat('org-a', c.id), null);
     } finally { await store.close(); }
   });
 }

@@ -22,6 +22,44 @@ permission lets a person read everything and record spending; `manage` sets
 up grants and budgets, imports, exports, voids any entry and reads the
 activity log.
 
+## Analyze
+
+Upload a spreadsheet and Ledger charts it at once; ask a question and Ledger
+answers from the data, showing how each figure was worked out. Open to
+everyone who uses Ledger (`use`).
+
+- **Reading** (`lib/dataset.js`): Excel (every tab) and CSV. The header row is
+  found under any title rows; blank rows, total rows and report footers are
+  left out; QuickBooks section headings ("6000 Personnel") become a Section
+  column; each column is typed (date, money, number, text) and read as that
+  type ("$1,250.00", "(50.00)", "1/3/26", Excel dates). Months across the top
+  ("Jan-26", "Feb-26"...) also get a long copy, one row per line and month.
+  The page says what was left out.
+- **Charts**: picked from the columns: the main amount over time, budget
+  against actual when both are there, the largest groups (a long tail folds
+  into Other). Each chart has its numbers in a table under it. Colors are
+  stepped for light and dark (`--series-N` in `styles.css`).
+- **Questions** (`services/ask.js`): Claude reads what each table holds, then
+  asks Ledger to compute: `run_query` filters, groups and totals (money in
+  whole cents), `calculate` does arithmetic on computed figures. Every figure
+  in the answer is checked against what was computed; one nothing computed
+  sends the answer back, and one still left is shown as not computed by
+  Ledger. The answer lists each step under "How this was worked out".
+  A question runs in the background, so leaving the page does not stop it.
+- **Chats** are saved per person, renamed and deleted by their owner, and
+  compacted past 500,000 tokens (`lib/compact.js`). A spreadsheet dropped in
+  a chat joins it as data; a document goes to the chat's own Library folder
+  (`lib/chat-files.js`, with `LIBRARY_URL` and `LIBRARY_SERVICE_TOKEN`), or
+  without Library stays with the chat as text.
+- **Ledger's records** (spending, budget lines, grants) are a dataset too,
+  read fresh each time.
+- **Privacy**: a spreadsheet and a chat belong to the person who added them;
+  another person's id answers 404. The organization export carries them.
+- **Other sources**: a dataset has a `source` (`upload` now). A connector
+  such as QuickBooks adds datasets through the same store calls
+  (`createDataset`, `updateDataset` with new `tables`) and they chart and
+  answer the same way.
+
 ## Importing
 
 **A pile of files** (the first tab of Import) takes every spreadsheet and
