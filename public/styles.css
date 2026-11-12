@@ -200,3 +200,4 @@ input[type="file"]::file-selector-button:hover { background: var(--primary-subtl
 .note span { display: block; margin-bottom: .3rem; }
 .rounds { margin: .4rem 0 .8rem; padding-left: 1.2rem; }
 .rounds li { margin: .15rem 0; }
+label.check { display: flex; gap: .5rem; align-items: center; margin: .25rem 0 .75rem; }

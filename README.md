@@ -67,8 +67,43 @@ changes any match, and a check lists every row before anything is saved.
   spending sheet uses account numbers). A line already on the budget takes
   the sheet's amount. Total rows are skipped: Ledger adds the lines itself.
 
-QuickBooks Online through a live connection is left for later; the CSV
-export covers the same data with no new credential.
+## QuickBooks Online (read only)
+
+A Ledger manager opens **QuickBooks** in the side column and connects the
+organization's company once, through Intuit's own sign-in. From then on
+Ledger reads it on connect, on **Sync now**, and every six hours
+(`lib/quickbooks.js`, `lib/quickbooks-sync.js`, `lib/quickbooks-routes.js`).
+
+- **Read only.** Intuit offers one accounting scope and no read-only one, so
+  Ledger keeps the promise itself: its client can only send GET to the
+  accounting API. The only other calls are OAuth's own (trade the sign-in
+  code, refresh, revoke on disconnect). `test/quickbooks.test.mjs` checks
+  every call.
+- **Into the same records as the spreadsheet import.** A QuickBooks class is
+  a grant or fund (by the fund's code, else its name); an account is a budget
+  line (by code or name). Expenses, checks, card charges and bills are
+  spending; vendor credits and card credits are refunds; journal entry lines
+  on expense accounts count too. Deposits and income show only as this
+  year's profit and loss totals. A class with no grant is listed with **Add
+  as a grant**.
+- **Nothing twice, nothing lost.** Each line is keyed by its company, id and
+  QuickBooks edit count. A line changed or moved in QuickBooks comes in again
+  and the old entry is voided ("Updated from QuickBooks"); one deleted there
+  is voided ("Removed in QuickBooks"). A row already imported from a
+  QuickBooks spreadsheet (same fund, day, amount, payee) is not added again.
+- **Budgets** come from QuickBooks only when a manager ticks the setting:
+  active budgets covering today, expense accounts only, per class.
+- **Tokens** are sealed with AES-256-GCM before they reach the database,
+  refreshed before they run out (Intuit hands out a new refresh token each
+  time), and revoked at Intuit and deleted on **Disconnect**. Spending already
+  brought in stays. The sign-in is tied to the browser that started it.
+
+Settings on `tss-ledger`: `QUICKBOOKS_CLIENT_ID` and
+`QUICKBOOKS_CLIENT_SECRET` from the Intuit developer app (blank: the page
+says it is not set up). The app's redirect URI is
+`https://<ledger address>/api/quickbooks/callback`. `QUICKBOOKS_ENVIRONMENT=sandbox`
+for an Intuit test company. `/api/health/live` asks Intuit whether it takes
+the keys.
 
 ## Who reads it
 

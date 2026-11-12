@@ -11,7 +11,7 @@ const stores = [['memory', async () => new MemoryStore().init()]];
 if (process.env.TEST_DATABASE_URL) {
   stores.push(['postgres', async () => {
     const s = await new PostgresStore(process.env.TEST_DATABASE_URL).init();
-    await s.q('TRUNCATE ledger_intakes, ledger_activity, ledger_entries, ledger_lines, ledger_funds');
+    await s.q('TRUNCATE ledger_quickbooks, ledger_intakes, ledger_activity, ledger_entries, ledger_lines, ledger_funds');
     return s;
   }]);
 }
@@ -140,6 +140,40 @@ for (const [name, open] of stores) {
       assert.deepEqual(list.map((x) => x.id), [b.id, a.id], 'newest first');
       assert.equal(list[1].files, undefined, 'the list leaves the files out');
       assert.deepEqual(list[1].file_names, ['qb.csv', 'award.pdf']);
+    } finally { await store.close(); }
+  });
+}
+
+for (const [name, open] of stores) {
+  test(`${name}: one QuickBooks connection per organization, saved, merged, due and removed; entries keep their QuickBooks reference`, async () => {
+    const store = await open();
+    try {
+      assert.equal(await store.getQuickbooks('org-a'), null);
+      const c = await store.saveQuickbooks('org-a', { realm_id: '123', company_name: 'Co', access_token: 'v1.sealed', refresh_token: 'v1.sealed2', access_expires_at: '2026-06-30T10:00:00.000Z', connected_by: 'Kim' });
+      assert.deepEqual([c.org_id, c.realm_id, c.status, c.environment, c.last_sync_at, c.last_sync, c.snapshot], ['org-a', '123', 'connected', 'production', null, null, null]);
+      assert.deepEqual(c.settings, {});
+      assert.equal(c.access_expires_at, '2026-06-30T10:00:00.000Z');
+      const u = await store.saveQuickbooks('org-a', { last_sync_at: '2026-06-30T11:00:00.000Z', last_sync: { added: 2, classes: [{ name: 'YD' }] }, settings: { budgets: true } });
+      assert.equal(u.company_name, 'Co', 'a save merges, it does not wipe');
+      assert.equal(u.access_token, 'v1.sealed');
+      assert.deepEqual(u.last_sync, { added: 2, classes: [{ name: 'YD' }] });
+      assert.deepEqual(u.settings, { budgets: true });
+      await store.saveQuickbooks('org-b', { realm_id: '456' });
+      assert.equal((await store.getQuickbooks('org-b')).realm_id, '456', 'each organization has its own');
+      assert.deepEqual(await store.quickbooksDue('2026-06-30T12:00:00.000Z'), ['org-a', 'org-b']);
+      assert.deepEqual(await store.quickbooksDue('2026-06-30T10:30:00.000Z'), ['org-b'], 'org-a synced after the cut-off');
+      await store.saveQuickbooks('org-b', { status: 'reconnect' });
+      assert.deepEqual(await store.quickbooksDue('2026-07-30T00:00:00.000Z'), ['org-a'], 'one waiting to be connected again is not due');
+      assert.equal(await store.removeQuickbooks('org-a'), true);
+      assert.equal(await store.getQuickbooks('org-a'), null);
+      assert.equal(await store.removeQuickbooks('org-a'), false);
+      assert.equal((await store.getQuickbooks('org-b')).realm_id, '456');
+
+      const f = await store.createFund('org-a', { id: id(), name: 'Youth' });
+      const e = await store.createEntry('org-a', { id: id(), fund_id: f.id, date: '2026-03-01', amount: 10, source: 'quickbooks', import_key: 'k1', external_ref: 'qbo:123:purchase:1:1' });
+      assert.equal(e.external_ref, 'qbo:123:purchase:1:1');
+      const plain = await store.createEntry('org-a', { id: id(), fund_id: f.id, date: '2026-03-01', amount: 10 });
+      assert.equal(plain.external_ref, null);
     } finally { await store.close(); }
   });
 }

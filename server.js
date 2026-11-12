@@ -37,11 +37,13 @@ import { publicErrorBody, logSafeError, normalizePublicError, requestContext, Pu
 import { errorReporter, installCrashHandlers } from './lib/error-tracking.js';
 import { openStore } from './lib/store.js';
 import { toCsv } from './lib/csv.js';
-import { readSheet, cleanMapping, mappedRows, previewOf, nameKey, readDay, readMoney, MAX_ROWS } from './lib/import-map.js';
+import { readSheet, cleanMapping, mappedRows, previewOf, nameKey, readDay, readMoney, findLine, MAX_ROWS } from './lib/import-map.js';
 
 export { readMoney };
 import * as rollodexApi from './lib/rollodex.js';
 import { intakeRoutes } from './lib/intakes.js';
+import { quickbooksRoutes } from './lib/quickbooks-routes.js';
+import { quickbooksConfig, checkQuickbooks } from './lib/quickbooks.js';
 import { createUsageClient } from './lib/usage.js';
 import * as senseApi from './services/sense.js';
 import {
@@ -71,6 +73,9 @@ export function createApp({
   sense = senseApi,
   senseDeps = {},
   usage = createUsageClient(),
+  // QuickBooks Online, read only (lib/quickbooks.js). Tests pass a stand-in Intuit.
+  quickbooksEnv = () => process.env,
+  quickbooksFetch = (...a) => globalThis.fetch(...a),
 } = {}) {
   if (!store) throw new Error('createApp needs a store');
   const app = express();
@@ -172,6 +177,7 @@ export function createApp({
     res.setHeader('Cache-Control', 'no-store');
     res.json(await runLiveChecks({
       claude: checkClaude({ key: env.ANTHROPIC_API_KEY, model: senseApi.drafter() }),
+      quickbooks: checkQuickbooks({ env: quickbooksEnv(), fetchImpl: quickbooksFetch }),
       ...Object.fromEntries(senseApi.reviewers().filter((m) => /^claude-/.test(m)).map((m) => [`reviewer:${m}`, checkClaude({ key: env.ANTHROPIC_API_KEY, model: m })])),
     }));
   }));
@@ -187,7 +193,7 @@ export function createApp({
   app.get('/api/health', wrap(async (_req, res) => {
     let db = true;
     try { await store.ping(); } catch (_) { db = false; }
-    res.status(db ? 200 : 503).json({ ok: db, app: APP_NAME, store: store.kind, db, cockpit_url: cockpitUrl(), dev_signin: devSignInEnabled(), rollodex: rollodex.rollodexConfigured(), reads_files: sense.configured() });
+    res.status(db ? 200 : 503).json({ ok: db, app: APP_NAME, store: store.kind, db, cockpit_url: cockpitUrl(), dev_signin: devSignInEnabled(), rollodex: rollodex.rollodexConfigured(), reads_files: sense.configured(), quickbooks: quickbooksConfig(quickbooksEnv()).status });
   }));
 
   app.get('/api/me', requireUser, (req, res) => {
@@ -196,6 +202,7 @@ export function createApp({
       options: { kinds: FUND_KINDS, statuses: FUND_STATUSES },
       rollodex: rollodex.rollodexConfigured() ? rollodex.rollodexUrl() : '',
       reads_files: sense.configured(),
+      quickbooks: quickbooksConfig(quickbooksEnv()).status === 'ready',
       today: clock(),
       release: RELEASE,
     });
@@ -511,14 +518,6 @@ export function createApp({
     if (sheet.rows.length > MAX_ROWS) throw bad('too_many_rows', `Import at most ${MAX_ROWS.toLocaleString('en-US')} rows at a time`);
     return mappedRows(sheet, cleanMapping(b.mapping, sheet.headers, fields));
   };
-  // A line named in a sheet: its code, its name, or an account such as
-  // "6010 Salaries" or "Expenses:Salaries" that ends with the name or starts with the code.
-  const findLine = (lines, given) => {
-    const g = nameKey(given);
-    if (!g) return null;
-    return lines.find((l) => l.code && nameKey(l.code) === g) || lines.find((l) => nameKey(l.name) === g)
-      || lines.find((l) => l.code && g.startsWith(`${nameKey(l.code)} `)) || lines.find((l) => g.endsWith(` ${nameKey(l.name)}`)) || null;
-  };
 
   app.post('/api/import/spend', requireManager, wrap(async (req, res) => {
     const b = req.body || {};
@@ -636,6 +635,7 @@ export function createApp({
   }));
 
   intakeRoutes(app, { store, wrap, requireManager, audit, clock, usage, sense, senseDeps, isId });
+  app.locals.quickbooks = quickbooksRoutes(app, { store, wrap, requireManager, audit, clock, env: quickbooksEnv, fetchImpl: quickbooksFetch });
 
   app.get('/api/activity', requireManager, wrap(async (req, res) => {
     res.json({ activity: await store.activity(req.user.org_id, Math.min(Number(req.query.limit) || 100, 500)) });
@@ -663,7 +663,11 @@ if (process.env.NODE_ENV !== 'test' && process.argv[1] === fileURLToPath(import.
   installCrashHandlers(errorReporter('tss-ledger'));
   const store = await openStore();
   const cockpitLink = await createCockpitLink({ audience: 'ledger', canEnter: CAN_ENTER, pool: store.kind === 'postgres' ? store.pool : null }).init();
-  const server = createApp({ store, cockpitLink }).listen(PORT, () => console.log(`ledger listening on ${PORT} (${store.kind} store)`));
+  const app = createApp({ store, cockpitLink });
+  const server = app.listen(PORT, () => console.log(`ledger listening on ${PORT} (${store.kind} store)`));
+  // QuickBooks is read again every six hours; this looks every half hour for a connection that is due.
+  const qbo = setInterval(() => app.locals.quickbooks.syncDue().catch((e) => logSafeError(console, e, 'quickbooks_schedule_failed')), 30 * 60 * 1000);
+  qbo.unref();
   const stop = () => server.close(() => store.close().finally(() => process.exit(0)));
   process.on('SIGTERM', stop);
   process.on('SIGINT', stop);

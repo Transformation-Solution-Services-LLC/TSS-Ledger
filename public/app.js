@@ -167,7 +167,7 @@ function route() {
   document.querySelectorAll('.nav a').forEach((a) => a.setAttribute('aria-current', String(a.dataset.view === view)));
   const show = {
     home: showHome, funds: () => (parts[1] ? showFund(parts[1]) : showFunds()), spending: showSpending,
-    import: showImport, activity: showActivity,
+    import: showImport, activity: showActivity, quickbooks: showQuickbooks,
   }[view] || showHome;
   show().catch((err) => { $('#view').innerHTML = `<p class="error">${esc(err.message)}</p>`; });
 }
@@ -270,7 +270,7 @@ function entryTable(entries, { withFund = false } = {}) {
     ${entries.map((e) => `<tr class="${e.voided_at ? 'voided' : ''}"><td>${esc(day(e.date))}</td><td class="num keep">${esc(money(e.amount))}</td>
       <td class="keep">${withFund ? `<a href="#/funds/${esc(e.fund_id)}">${esc(e.fund_name)}</a>` : esc(e.line_name || 'Not on a line')}</td>
       <td>${esc(e.payee)}${e.reference ? ` <span class="muted">#${esc(e.reference)}</span>` : ''}</td>
-      <td>${esc(e.memo)}${e.voided_at ? `<br><span class="badge bad">Voided</span> <span class="muted">${esc(e.void_reason)}, by ${esc(e.voided_by)}</span>` : ''}${e.source === 'csv' ? ' <span class="badge">imported</span>' : ''}</td>
+      <td>${esc(e.memo)}${e.voided_at ? `<br><span class="badge bad">Voided</span> <span class="muted">${esc(e.void_reason)}, by ${esc(e.voided_by)}</span>` : ''}${e.source === 'csv' ? ' <span class="badge">imported</span>' : ''}${e.source === 'quickbooks' ? ' <span class="badge">QuickBooks</span>' : ''}</td>
       <td class="tools">${e.can_void ? `<button class="small" data-void="${esc(e.id)}">Void</button>` : ''}</td></tr>`).join('')}
     </tbody></table>`;
 }
@@ -381,7 +381,7 @@ async function showImport() {
     <div class="head"><h2>Import</h2></div>
     <div class="tabs" role="tablist"><a href="#/import?kind=pile" aria-selected="${kind === 'pile'}">A pile of files</a><a href="#/import?kind=spend${keep}" aria-selected="${kind === 'spend'}">Spending</a><a href="#/import?kind=budget${keep}" aria-selected="${kind === 'budget'}">A grant's budget</a></div>
     ${kind === 'pile' ? '<div id="pile"></div>' : kind === 'spend'
-    ? `<p class="muted">From QuickBooks, run Reports, Transaction Detail by Account, and export it to Excel, then save it as CSV. A bank or card export works too. Rows already imported are skipped.</p>${pick('Fund for rows that name none', false)}`
+    ? `<p class="muted">From QuickBooks, run Reports, Transaction Detail by Account, and export it to Excel, then save it as CSV. A bank or card export works too. Rows already imported are skipped.${state.me.quickbooks ? ' Or <a href="#/quickbooks">connect QuickBooks</a> and Ledger reads it for you.' : ''}</p>${pick('Fund for rows that name none', false)}`
     : `<p class="muted">One row per budget line with its amount. A line already on the budget takes the sheet's amount.</p>${pick('Grant or fund', true)}`}
     ${kind === 'pile' ? '' : funds.length ? '<div id="importer"></div>' : '<p class="empty">Add a grant or fund first: <a href="#/funds">Grants and funds</a>, or upload <a href="#/import?kind=pile">a pile of files</a>.</p>'}`;
   if (kind === 'pile') {
@@ -397,6 +397,96 @@ async function showImport() {
       ? `${r.added} entr${r.added === 1 ? 'y' : 'ies'} (${money(r.total)})${r.unchanged ? `, ${r.unchanged} already there` : ''}`
       : `${r.added} added, ${r.updated} updated${r.unchanged ? `, ${r.unchanged} unchanged` : ''}, budget lines total ${money(r.total)}`),
     after: () => toast('Imported.'),
+  });
+}
+
+// ---- QuickBooks: read only, managers ----
+
+const QB_RESULT = {
+  connected: 'QuickBooks is connected. Ledger is reading it now.',
+  declined: 'QuickBooks was not connected.',
+  expired: 'That sign-in ran out. Connect again.',
+  failed: 'QuickBooks did not finish connecting. Try again.',
+  off: 'Connecting QuickBooks is not set up yet.',
+};
+
+async function showQuickbooks() {
+  if (!state.canManage) { $('#view').innerHTML = '<p class="error">QuickBooks is for Ledger managers.</p>'; return; }
+  const result = params().get('result');
+  if (result) { if (QB_RESULT[result]) toast(QB_RESULT[result]); history.replaceState(null, '', '#/quickbooks'); }
+  const q = await api('/api/quickbooks');
+  const head = '<div class="head"><h2>QuickBooks</h2></div>';
+  if (!q.setup && !q.connected) { $('#view').innerHTML = `${head}<p class="empty">Connecting QuickBooks is not set up yet.</p>`; return; }
+  const connectBtn = (label) => `<button class="primary" id="qb-connect">${esc(label)}</button>`;
+  if (!q.connected) {
+    $('#view').innerHTML = `${head}
+      <div class="card empty-state">
+        <p><strong>${q.reconnect ? 'QuickBooks asks to be connected again.' : 'Bring spending in from QuickBooks Online'}</strong></p>
+        <p class="muted">Ledger reads expenses, checks, bills, vendor credits and journal entries, and puts each on the grant whose code is its QuickBooks class. It never changes anything in QuickBooks.</p>
+        <p class="row">${connectBtn(q.reconnect ? 'Connect again' : 'Connect to QuickBooks')}</p>
+      </div>`;
+    wireQbConnect();
+    return;
+  }
+  const s = q.last_sync || {};
+  const n = q.snapshot;
+  const unmatched = (s.classes || []).filter((c) => !c.fund_id && c.lines);
+  const matched = (s.classes || []).filter((c) => c.fund_id);
+  const counted = [
+    s.added !== undefined && `${s.added} new`,
+    s.replaced && `${s.replaced} updated`,
+    s.removed && `${s.removed} removed in QuickBooks`,
+    s.from_sheet && `${s.from_sheet} already imported from a spreadsheet`,
+    s.budgets && `budget lines: ${s.budgets.added} added, ${s.budgets.updated} changed`,
+  ].filter(Boolean).join(', ');
+  $('#view').innerHTML = `
+    <div class="head"><div><h2>QuickBooks</h2><p class="muted">${esc(q.company_name || 'Connected')}${q.sandbox ? ' (test company)' : ''}. Connected by ${esc(q.connected_by)} on ${esc(day(String(q.connected_at || '').slice(0, 10)))}. Read only.</p></div>
+      <div class="row"><button class="primary" id="qb-sync" ${q.syncing ? 'disabled' : ''}>${q.syncing ? 'Reading QuickBooks' : 'Sync now'}</button></div></div>
+    ${s.error ? `<p class="notice">${esc(s.error)}</p>` : ''}
+    <p class="muted">${q.last_sync_at ? `Last read ${esc(when(q.last_sync_at))}${s.from ? `, ${esc(day(s.from))} to ${esc(day(s.to))}` : ''}${counted ? `: ${esc(counted)}` : ''}. Read again every six hours.` : 'Not read yet.'}</p>
+    ${n ? `<div class="tiles">
+      <div class="tile"><div class="n">${esc(money(n.income))}</div><div class="l">Income this year</div></div>
+      <div class="tile"><div class="n">${esc(money(n.expenses))}</div><div class="l">Expenses this year</div></div>
+      <div class="tile"><div class="n">${esc(money(n.net))}</div><div class="l">Net this year</div></div>
+    </div>` : ''}
+    ${unmatched.length ? `<div class="card needs"><h3>Classes with no grant</h3><p class="muted">Spending in these classes stays out of Ledger until a grant or fund has the class as its code.</p>
+      <table class="list"><thead><tr><th>Class</th><th class="num">Lines</th><th class="num">Amount</th><th></th></tr></thead><tbody>
+      ${unmatched.map((c) => `<tr><td>${esc(c.name)}</td><td class="num">${c.lines}</td><td class="num">${esc(money(c.total))}</td><td class="tools"><button class="small" data-class="${esc(c.name)}">Add as a grant</button></td></tr>`).join('')}
+      </tbody></table></div>` : ''}
+    ${s.no_class?.lines ? `<p class="muted">${s.no_class.lines} line${s.no_class.lines === 1 ? '' : 's'} (${esc(money(s.no_class.total))}) had no class in QuickBooks, so no grant.</p>` : ''}
+    ${matched.length ? `<h3>Classes on grants</h3><table class="list"><thead><tr><th>Class</th><th>Grant or fund</th><th class="num">Lines</th><th class="num">Amount</th></tr></thead><tbody>
+      ${matched.map((c) => `<tr data-href="#/funds/${esc(c.fund_id)}"><td>${esc(c.name)}</td><td>${esc(c.fund_name)}</td><td class="num">${c.lines}</td><td class="num">${esc(money(c.total))}</td></tr>`).join('')}
+      </tbody></table>` : ''}
+    <h3>Settings</h3>
+    <label class="check"><input type="checkbox" id="qb-budgets" ${q.settings.budgets ? 'checked' : ''}> Take each grant's budget from QuickBooks budgets</label>
+    <p class="row"><button id="qb-disconnect">Disconnect</button></p>`;
+  wireRows();
+  const again = () => showQuickbooks().catch(fail);
+  $('#qb-sync').addEventListener('click', async (e) => {
+    e.target.disabled = true; e.target.textContent = 'Reading QuickBooks';
+    try { await api('/api/quickbooks/sync', { method: 'POST' }); toast('QuickBooks read.'); } catch (err) { fail(err); }
+    again();
+  });
+  $('#qb-budgets').addEventListener('change', async (e) => {
+    try { await api('/api/quickbooks/settings', { method: 'PATCH', body: { budgets: e.target.checked } }); toast(e.target.checked ? 'Budgets come from QuickBooks at the next sync.' : 'Budgets stay as they are in Ledger.'); } catch (err) { fail(err); again(); }
+  });
+  document.querySelectorAll('[data-class]').forEach((b) => b.addEventListener('click', () => modalForm(fundForm({ name: b.dataset.class, code: b.dataset.class }), async (v) => {
+    await api('/api/funds', { method: 'POST', body: v });
+    await api('/api/quickbooks/sync', { method: 'POST' });
+    toast('Grant added and QuickBooks read again.');
+  }, again)));
+  $('#qb-disconnect').addEventListener('click', async () => {
+    if (!confirm('Disconnect QuickBooks? Spending already brought in stays in Ledger.')) return;
+    try { await api('/api/quickbooks/disconnect', { method: 'POST' }); toast('QuickBooks disconnected.'); } catch (err) { fail(err); }
+    again();
+  });
+  if (q.syncing) setTimeout(() => { if (location.hash.startsWith('#/quickbooks')) again(); }, 3000);
+}
+
+function wireQbConnect() {
+  $('#qb-connect')?.addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    try { const { url } = await api('/api/quickbooks/connect', { method: 'POST' }); location.href = url; } catch (err) { e.target.disabled = false; fail(err); }
   });
 }
 
