@@ -10,7 +10,7 @@
   --bg: #F6F4EE; --surface: #FFFFFF; --sunken: #F1EEE5;
   --text: #222724; --text-2: #474F49; --muted: #5F6861;
   --border: #DDD7CA; --primary: #0A3269; --primary-hover: #0D4284; --primary-text: #FFFFFF;
-  --primary-subtle: #E6EBF3; --accent: #A9512F; --accent-subtle: #F7E7E0; --focus: #1F6FB2;
+  --primary-subtle: #E6EBF3; --accent: #A9512F; --accent-subtle: #F8EAE4; --focus: #1F6FB2;
   --good: #166534; --good-subtle: #E3F0E6; --warn: #8A5A00; --warn-subtle: #F8EEDC;
   --bad: #8C1D18; --bad-subtle: #F7E1DF;
   color-scheme: light;
@@ -39,7 +39,7 @@ a { color: var(--primary); }
 button { font: inherit; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: .5rem .9rem; cursor: pointer; }
 button.primary { background: var(--primary); border-color: var(--primary); color: var(--primary-text); }
 button.primary:hover { background: var(--primary-hover); }
-button.accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.accent { background: var(--accent); border-color: var(--accent); color: var(--tss-clay-ink, #fff); }
 button.small { font-size: .85rem; padding: .25rem .6rem; }
 button:disabled { opacity: .55; cursor: not-allowed; }
 input, textarea, select { font: inherit; width: 100%; padding: .55rem .7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }

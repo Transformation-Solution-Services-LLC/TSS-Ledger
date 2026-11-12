@@ -1,9 +1,11 @@
 /* The TSS top strip (tss-nav.js): Back on the left, light/dark and Cockpit on the right.
    The same file in every TSS app; clay buttons in DM Sans. */
-:root { --tss-clay: #A9512F; --tss-clay-subtle: #F7E7E0; --tss-clay-ink: #FFFFFF; }
-:root[data-theme="dark"] { --tss-clay: #E99073; --tss-clay-subtle: #3A2A25; --tss-clay-ink: #1B1410; }
+:root { --tss-clay: #A9512F; --tss-clay-subtle: #F8EAE4; --tss-clay-ink: #FFFFFF; --tss-placeholder: #5F6861; }
+:root[data-theme="dark"] { --tss-clay: #E99073; --tss-clay-subtle: #3A2A25; --tss-clay-ink: #1B1410; --tss-placeholder: #9EA69E; }
+/* Hint text in every field, readable in both modes (the browser's own grey fails on dark). */
+::placeholder { color: var(--tss-placeholder); opacity: 1; }
 .tss-nav { display: flex; align-items: center; gap: .5rem; margin: 0 0 1rem; font-family: "DM Sans", system-ui, sans-serif; }
-.tss-nav[hidden], .tss-nav [hidden] { display: none !important; }
+.tss-nav[hidden], .tss-nav [hidden], .tss-nav-back[hidden], .tss-nav-theme[hidden], .tss-nav-cockpit[hidden] { display: none !important; }
 .tss-nav-gap { flex: 1; }
 .tss-nav-back, .tss-nav-theme, .tss-nav-cockpit {
   display: inline-flex; align-items: center; gap: .3rem; min-height: 36px; padding: .35rem .85rem;
