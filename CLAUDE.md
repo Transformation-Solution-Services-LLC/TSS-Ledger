@@ -13,6 +13,7 @@ README.md.
 - `lib/intakes.js`, `lib/shape.js`, `services/sense.js`, `services/extract.js` a pile of files made sense of: read, a shape proposed by Claude, read through by Ledger, checked until three different models clear it, imported.
 - `lib/usage.js` the organization's monthly AI limit in Cockpit (same as Library).
 - `lib/rollodex.js` the Rollodex client: link a grant's funder.
+- `lib/quickbooks.js` Intuit OAuth, sealed tokens, the GET-only accounting client; `lib/quickbooks-sync.js` QuickBooks into funds, lines and entries; `lib/quickbooks-routes.js` the manager's routes and the six-hour schedule.
 - `lib/cockpit.js` launch-ticket verification; `lib/cockpit-link.js` access changes and the audit trail; `lib/auth.js` sessions and the service token. Same files as Vault and Rollodex.
 - `lib/error-tracking.js` sends 5xx errors and crashes to a Sentry-format tracker, scrubbed. Off without `ERROR_TRACKING_DSN`.
 - `public/` vanilla ES modules, no build step. `public/util.js` holds the DOM-free helpers tests import.
@@ -34,6 +35,7 @@ DEV_SIGNIN=on npm start                     # http://localhost:8797
 - **Money is a number of dollars** in the contract, `numeric(14,2)` in Postgres. Every sum is taken in whole cents (`lib/finance.js`). Restricted and unrestricted money are never added together.
 - **Figures are computed by Ledger, never by a model.** Watson and Rook-E quote what `/api/service/*` answers. In a pile of files a model proposes only the shape; `lib/shape.js` reads every amount, and an award needs its quote in the document.
 - **Three different models clear the same draft** before a pile imports without a warning (`services/sense.js`). A fix restarts the count; the drafter never checks itself; the page never names a model.
+- **QuickBooks is read only.** The accounting client sends GET and nothing else; the only POSTs are OAuth's (token, refresh, revoke). Tokens are sealed before the store sees them and never leave in a response, log or export. A change in QuickBooks voids the old entry and adds the new one; nothing is edited or deleted. `test/quickbooks.test.mjs` checks every call.
 - **Other apps get figures, never entries.** Cockpit, Watson and Rook-E never receive a payee, a memo or a single entry. Each service read is logged with the app.
 - **Permissions:** `use` reads and records spending; `manage` changes grants and budgets, imports, exports, voids any entry, reads the activity log. Cockpit grants them.
 - **Dates are local calendar days** (`YYYY-MM-DD`), never converted through UTC. `today()` uses `TZ_DISPLAY`.
