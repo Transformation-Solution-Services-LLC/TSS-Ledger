@@ -19,3 +19,43 @@
 .tss-nav-back:focus-visible, .tss-nav-theme:focus-visible, .tss-nav-cockpit:focus-visible { outline: 2px solid var(--focus, #1F6FB2); outline-offset: 2px; }
 @media (max-width: 520px) { .tss-nav-theme span { display: none; } .tss-nav-theme { padding: .35rem .6rem; } }
 @media print { .tss-nav { display: none; } }
+/* The apps panel (tss-nav.js): the person's apps down the right side, picture and name. */
+.tss-nav-apps {
+  display: none; align-items: center; gap: .3rem; min-height: 36px; padding: .35rem .85rem; border-radius: 8px;
+  font: 600 .9rem/1.2 "DM Sans", system-ui, sans-serif; cursor: pointer;
+  background: var(--surface, #fff); color: var(--tss-clay); border: 1px solid var(--tss-clay);
+}
+.tss-nav-apps:hover { background: var(--tss-clay-subtle); }
+.tss-nav-apps svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; }
+.tss-nav-apps:focus-visible { outline: 2px solid var(--focus, #1F6FB2); outline-offset: 2px; }
+.tss-nav-apps[hidden], .tss-rail[hidden] { display: none !important; }
+.tss-rail {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 900; width: 200px; box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 8px; padding: 16px 12px; overflow-y: auto;
+  background: var(--tss-rail-bg, #F6F4EE); border-left: 1px solid var(--tss-rail-line, #DDD8CC);
+  font-family: "DM Sans", system-ui, sans-serif;
+}
+:root[data-theme="dark"] .tss-rail { --tss-rail-bg: #1B1F26; --tss-rail-line: #2E3440; }
+.tss-rail-title { font-weight: 700; font-size: 1rem; color: var(--tss-rail-ink, #1B2430); margin: 0 4px 4px; }
+.tss-rail-tile {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; text-decoration: none;
+  background: var(--tss-rail-card, #FFFFFF); border: 1px solid var(--tss-rail-line, #DDD8CC);
+  color: var(--tss-rail-ink, #1B2430); font-weight: 700; font-size: .95rem;
+}
+:root[data-theme="dark"] .tss-rail-tile, :root[data-theme="dark"] .tss-rail-title { --tss-rail-card: #232934; --tss-rail-ink: #ECEFF3; }
+a.tss-rail-tile:hover { border-color: var(--tss-clay); text-decoration: none; color: var(--tss-rail-ink, #1B2430); }
+a.tss-rail-tile:focus-visible { outline: 2px solid var(--focus, #1F6FB2); outline-offset: 2px; }
+.tss-rail-here { border-color: var(--tss-clay); box-shadow: inset 3px 0 0 var(--tss-clay); }
+.tss-rail-pic { width: 40px; height: 40px; flex: none; border-radius: 8px; }
+.tss-rail-mono { display: inline-flex; align-items: center; justify-content: center; background: #0A3269; color: #F6F4EE; font-size: .7rem; font-weight: 700; }
+.tss-rail-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Wide screens: the panel stays open beside the app. */
+@media (min-width: 1100px) { html.tss-has-rail body { margin-right: 200px; } }
+/* Narrower: the Apps button in the strip opens it over the app. */
+@media (max-width: 1099px) {
+  .tss-nav-apps { display: inline-flex; }
+  .tss-rail { display: none; box-shadow: -8px 0 24px rgba(0, 0, 0, .18); }
+  .tss-rail.tss-rail-open { display: flex; }
+}
+@media (max-width: 520px) { .tss-nav-apps span { display: none; } .tss-nav-apps { padding: .35rem .6rem; } }
+@media print { .tss-rail { display: none !important; } html.tss-has-rail body { margin-right: 0; } }
