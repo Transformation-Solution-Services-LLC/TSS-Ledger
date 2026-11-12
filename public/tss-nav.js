@@ -31,7 +31,7 @@ const APPS_KEY = 'tss.nav.apps';
 // The apps the panel knows, by Cockpit's id. Cockpit's own pages (Professor,
 // Coming soon) open there; the others open signed in through #/open/<id>.
 export const RAIL_APPS = {
-  sherlock: 'Sherlock', watson: 'Watson', library: 'Library', circles: 'Circles',
+  sherlock: 'Sherlock', watson: 'Watson', library: 'Library',
   rollodex: 'Rollodex', vault: 'Vault', ledger: 'Ledger', gatsby: 'Gatsby',
   'tjc-app': 'TJC App', professor: 'Professor', eva: 'Eva', grandmother: 'Grandmother',
 };
