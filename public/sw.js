@@ -6,7 +6,7 @@
 // and drops the old one. Registered from app.js.
 const VERSION = new URL(self.location.href).searchParams.get('v') || 'dev';
 const CACHE = `tss-ledger-shell-${VERSION}`;
-const SHELL = ['/', '/app.js', '/util.js', '/importer.js', '/pile.js', '/styles.css', '/tss-theme.js', '/tss-nav.js', '/tss-nav.css', '/manifest.webmanifest',
+const SHELL = ['/', '/app.js', '/util.js', '/importer.js', '/pile.js', '/data.js', '/chart.js', '/styles.css', '/tss-theme.js', '/tss-nav.js', '/tss-nav.css', '/manifest.webmanifest',
   '/brand/ledger.png', '/brand/tss-wordmark.webp', '/brand/tss-wordmark-light.webp', '/brand/wally.webp', '/brand/rook-e-robot.webp', '/icons/icon-192.png', '/icons/apple-touch-icon.png'];
 
 function shouldCache(url) {

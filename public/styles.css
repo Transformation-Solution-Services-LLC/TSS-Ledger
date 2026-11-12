@@ -201,3 +201,61 @@ input[type="file"]::file-selector-button:hover { background: var(--primary-subtl
 .rounds { margin: .4rem 0 .8rem; padding-left: 1.2rem; }
 .rounds li { margin: .15rem 0; }
 label.check { display: flex; gap: .5rem; align-items: center; margin: .25rem 0 .75rem; }
+
+/* Analyze (data.js, chart.js). Series colors stepped for each theme. */
+:root { --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4; --series-6: #008300; }
+:root[data-theme="dark"] { --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181; --series-6: #008300; }
+.data-drop { border-style: dashed; margin-bottom: 1rem; }
+.data-drop.over, .chat-box.over { border-color: var(--primary); background: var(--primary-subtle); }
+.data-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .8rem; }
+.data-card { display: flex; flex-direction: column; gap: .2rem; text-decoration: none; color: var(--text); }
+.data-card:hover { border-color: var(--primary); }
+.viz-grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 48rem), 1fr)); gap: 1rem; margin: 1rem 0; }
+.viz-card { margin: 0; min-width: 0; }
+.viz-card figcaption { font-weight: 600; margin-bottom: .4rem; }
+.viz { width: 100%; height: auto; display: block; overflow: visible; }
+.viz-grid { stroke: var(--border); stroke-width: 1; }
+.viz-grid.zero { stroke: var(--muted); }
+.viz-tick, .viz-label, .viz-value { font-size: 12px; fill: var(--muted); font-family: inherit; }
+.viz-label { fill: var(--text-2); font-size: 13px; }
+.viz-value { fill: var(--text); font-variant-numeric: tabular-nums; }
+.viz-bar { stroke: var(--surface); stroke-width: 1; }
+.viz-bar:hover, .viz-dot:hover { opacity: .8; }
+.viz-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.viz-dot { stroke: var(--surface); stroke-width: 2; }
+.viz-bar.s1, .viz-dot.s1, .viz-key.s1 { fill: var(--series-1); background: var(--series-1); } .viz-line.s1 { stroke: var(--series-1); }
+.viz-bar.s2, .viz-dot.s2, .viz-key.s2 { fill: var(--series-2); background: var(--series-2); } .viz-line.s2 { stroke: var(--series-2); }
+.viz-bar.s3, .viz-dot.s3, .viz-key.s3 { fill: var(--series-3); background: var(--series-3); } .viz-line.s3 { stroke: var(--series-3); }
+.viz-bar.s4, .viz-dot.s4, .viz-key.s4 { fill: var(--series-4); background: var(--series-4); } .viz-line.s4 { stroke: var(--series-4); }
+.viz-bar.s5, .viz-dot.s5, .viz-key.s5 { fill: var(--series-5); background: var(--series-5); } .viz-line.s5 { stroke: var(--series-5); }
+.viz-bar.s6, .viz-dot.s6, .viz-key.s6 { fill: var(--series-6); background: var(--series-6); } .viz-line.s6 { stroke: var(--series-6); }
+.viz-legend { list-style: none; display: flex; flex-wrap: wrap; gap: .3rem 1rem; padding: 0; margin: .4rem 0 0; font-size: .85rem; color: var(--text-2); }
+.viz-legend li { display: flex; align-items: center; gap: .4rem; }
+.viz-key { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+.viz-numbers { margin-top: .4rem; font-size: .9rem; }
+.viz-numbers summary, .how summary, .preview summary { cursor: pointer; color: var(--text-2); }
+.viz-table { overflow-x: auto; max-height: 24rem; overflow-y: auto; }
+.preview { margin-top: 1.5rem; }
+.small-n { font-size: 1.1rem !important; }
+.data-chat { margin-top: 1.5rem; }
+.chat-box { display: flex; flex-direction: column; gap: .8rem; }
+.msgs { display: flex; flex-direction: column; gap: 1rem; }
+.msg.user { align-self: flex-end; max-width: 80%; background: var(--primary-subtle); border-radius: 12px; padding: .5rem .9rem; }
+.msg.user p { margin: 0; white-space: pre-wrap; }
+.msg.assistant { max-width: 100%; }
+.msg.assistant .answer p { margin: 0 0 .6rem; }
+.msg.thinking { color: var(--muted); }
+.how { font-size: .9rem; margin-top: .4rem; }
+.how ol { margin: .4rem 0; padding-left: 1.3rem; }
+.how li { margin: .2rem 0; }
+.answer-table { margin: .6rem 0; }
+.follow { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 0; }
+.follow button { text-align: left; }
+.composer { display: flex; gap: .5rem; align-items: flex-end; }
+.composer textarea { flex: 1; resize: vertical; min-height: 2.6rem; }
+.composer .attach { padding: .45rem; line-height: 0; }
+.composer .attach svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .6rem; }
+.chip { font-size: .8rem; border: 1px solid var(--border); border-radius: 999px; padding: .1rem .6rem; background: var(--surface); }
+.chip.doc { background: var(--sunken); }
+#pick-chat { width: auto; max-width: 16rem; padding: .25rem .5rem; font-size: .85rem; }

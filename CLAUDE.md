@@ -11,6 +11,7 @@ README.md.
 - `lib/finance.js` every figure the app shows and shares: fund summaries, burn rate, pace, line variance, totals, Cockpit's rollup and Needs you, the sentences Watson cites. Pure functions over the store's rows, in whole cents.
 - `lib/import-map.js`, `lib/csv.js` CSV in and out, column matching.
 - `lib/intakes.js`, `lib/shape.js`, `services/sense.js`, `services/extract.js` a pile of files made sense of: read, a shape proposed by Claude, read through by Ledger, checked until three different models clear it, imported.
+- `lib/dataset.js`, `lib/analysis.js`, `services/ask.js`, `public/data.js`, `public/chart.js` Analyze: a spreadsheet read into typed tables, charted, and questions answered by Claude from figures Ledger computes (`runQuery`, `calculate`); every figure in an answer is checked. `lib/compact.js` and `lib/chat-files.js` are the shared chat files.
 - `lib/usage.js` the organization's monthly AI limit in Cockpit (same as Library).
 - `lib/rollodex.js` the Rollodex client: link a grant's funder.
 - `lib/quickbooks.js` Intuit OAuth, sealed tokens, the GET-only accounting client; `lib/quickbooks-sync.js` QuickBooks into funds, lines and entries; `lib/quickbooks-routes.js` the manager's routes and the six-hour schedule.
@@ -34,6 +35,7 @@ DEV_SIGNIN=on npm start                     # http://localhost:8797
 - **Nothing is deleted.** A fund is archived, a budget line is removed (kept, hidden), a spend entry is voided with a reason and stays on the record, counted for nothing.
 - **Money is a number of dollars** in the contract, `numeric(14,2)` in Postgres. Every sum is taken in whole cents (`lib/finance.js`). Restricted and unrestricted money are never added together.
 - **Figures are computed by Ledger, never by a model.** Watson and Rook-E quote what `/api/service/*` answers. In a pile of files a model proposes only the shape; `lib/shape.js` reads every amount, and an award needs its quote in the document.
+- **An answer quotes only computed figures.** In Analyze, Claude asks `lib/dataset.js` for every total; `uncheckedFigures` sends back an answer with a figure nothing computed. Spreadsheets and data chats are their owner's alone.
 - **Three different models clear the same draft** before a pile imports without a warning (`services/sense.js`). A fix restarts the count; the drafter never checks itself; the page never names a model.
 - **QuickBooks is read only.** The accounting client sends GET and nothing else; the only POSTs are OAuth's (token, refresh, revoke). Tokens are sealed before the store sees them and never leave in a response, log or export. A change in QuickBooks voids the old entry and adds the new one; nothing is edited or deleted. `test/quickbooks.test.mjs` checks every call.
 - **Other apps get figures, never entries.** Cockpit, Watson and Rook-E never receive a payee, a memo or a single entry. Each service read is logged with the app.

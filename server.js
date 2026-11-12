@@ -44,6 +44,9 @@ import * as rollodexApi from './lib/rollodex.js';
 import { intakeRoutes } from './lib/intakes.js';
 import { quickbooksRoutes } from './lib/quickbooks-routes.js';
 import { quickbooksConfig, checkQuickbooks } from './lib/quickbooks.js';
+import { analysisRoutes } from './lib/analysis.js';
+import * as askApi from './services/ask.js';
+import * as chatFilesApi from './lib/chat-files.js';
 import { createUsageClient } from './lib/usage.js';
 import * as senseApi from './services/sense.js';
 import {
@@ -76,6 +79,11 @@ export function createApp({
   // QuickBooks Online, read only (lib/quickbooks.js). Tests pass a stand-in Intuit.
   quickbooksEnv = () => process.env,
   quickbooksFetch = (...a) => globalThis.fetch(...a),
+  // Questions about a person's spreadsheets (lib/analysis.js, services/ask.js).
+  ask = askApi,
+  askDeps = {},
+  chatFiles = chatFilesApi,
+  compactAt = null,
 } = {}) {
   if (!store) throw new Error('createApp needs a store');
   const app = express();
@@ -93,7 +101,9 @@ export function createApp({
   // (base64, up to 40 MB of files) has its own, larger limit.
   const smallJson = express.json({ limit: '8mb' });
   const pileJson = express.json({ limit: '56mb' });
-  app.use((req, res, next) => (req.method === 'POST' && req.path === '/api/intakes' ? pileJson : smallJson)(req, res, next));
+  // Spreadsheets for Analyze (up to ten, 10 MB each) take the same larger limit.
+  const bigBody = (req) => req.method === 'POST' && (req.path === '/api/intakes' || req.path === '/api/data' || /^\/api\/data-chats\/[^/]+\/files$/.test(req.path));
+  app.use((req, res, next) => (bigBody(req) ? pileJson : smallJson)(req, res, next));
 
   const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
   app.locals.cockpitLink = cockpitLink;
@@ -193,7 +203,7 @@ export function createApp({
   app.get('/api/health', wrap(async (_req, res) => {
     let db = true;
     try { await store.ping(); } catch (_) { db = false; }
-    res.status(db ? 200 : 503).json({ ok: db, app: APP_NAME, store: store.kind, db, cockpit_url: cockpitUrl(), dev_signin: devSignInEnabled(), rollodex: rollodex.rollodexConfigured(), reads_files: sense.configured(), quickbooks: quickbooksConfig(quickbooksEnv()).status });
+    res.status(db ? 200 : 503).json({ ok: db, app: APP_NAME, store: store.kind, db, cockpit_url: cockpitUrl(), dev_signin: devSignInEnabled(), rollodex: rollodex.rollodexConfigured(), reads_files: sense.configured(), quickbooks: quickbooksConfig(quickbooksEnv()).status, asks: ask.configured(), chat_files: chatFiles.chatFilesConfigured() });
   }));
 
   app.get('/api/me', requireUser, (req, res) => {
@@ -203,6 +213,7 @@ export function createApp({
       rollodex: rollodex.rollodexConfigured() ? rollodex.rollodexUrl() : '',
       reads_files: sense.configured(),
       quickbooks: quickbooksConfig(quickbooksEnv()).status === 'ready',
+      asks: ask.configured(),
       today: clock(),
       release: RELEASE,
     });
@@ -406,14 +417,17 @@ export function createApp({
 
   app.get('/api/export/org', requireExport, wrap(async (req, res) => {
     const org = req.user.org_id;
-    const [live, archived, lines, entries, activity] = await Promise.all([
+    const [live, archived, lines, entries, activity, datasetList, chatList] = await Promise.all([
       store.listFunds(org), store.listFunds(org, { archived: true }), store.listLines(org, { removed: true }), store.listEntries(org), store.activity(org, EXPORT_ACTIVITY_LIMIT),
+      store.listDatasets(org), store.listChats(org),
     ]);
+    const datasets = await Promise.all(datasetList.map((d) => store.getDataset(org, d.id)));
+    const data_chats = await Promise.all(chatList.map((c) => store.getChat(org, c.id)));
     const funds = [...live, ...archived];
     audit(req, 'export.org', 'everything', `${funds.length} funds, ${lines.length} budget lines, ${entries.length} entries`);
     res.json({
       schema: 'tss.org-export/v1', app: 'ledger', org_id: org, exported_at: new Date().toISOString(),
-      tables: { funds, budget_lines: lines, entries, activity }, files: [],
+      tables: { funds, budget_lines: lines, entries, activity, datasets, data_chats }, files: [],
     });
   }));
 
@@ -636,6 +650,7 @@ export function createApp({
 
   intakeRoutes(app, { store, wrap, requireManager, audit, clock, usage, sense, senseDeps, isId });
   app.locals.quickbooks = quickbooksRoutes(app, { store, wrap, requireManager, audit, clock, env: quickbooksEnv, fetchImpl: quickbooksFetch });
+  analysisRoutes(app, { store, wrap, requireUser, audit, clock, usage, ask, askDeps, chatFiles, isId, compactAt });
 
   app.get('/api/activity', requireManager, wrap(async (req, res) => {
     res.json({ activity: await store.activity(req.user.org_id, Math.min(Number(req.query.limit) || 100, 500)) });

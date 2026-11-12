@@ -7,6 +7,7 @@ const $ = (sel, root = document) => root.querySelector(sel);
 import { esc, day, when, KIND, STATUS, PACE, money, pct, monthLabel, launchRoute } from './util.js';
 import { mountImporter } from './importer.js';
 import { mountPile } from './pile.js';
+import { showData, showDataset } from './data.js';
 import { tssNav } from './tss-nav.js';
 
 const state = { token: null, name: '', org: '', canManage: false, me: null, today: new Date().toISOString().slice(0, 10) };
@@ -168,10 +169,12 @@ function route() {
   const show = {
     home: showHome, funds: () => (parts[1] ? showFund(parts[1]) : showFunds()), spending: showSpending,
     import: showImport, activity: showActivity, quickbooks: showQuickbooks,
+    data: () => (parts[1] ? showDataset(dataCtx, decodeURIComponent(parts[1]), params()) : showData(dataCtx)),
   }[view] || showHome;
   show().catch((err) => { $('#view').innerHTML = `<p class="error">${esc(err.message)}</p>`; });
 }
 const params = () => new URLSearchParams(location.hash.split('?')[1] || '');
+const dataCtx = { api: (...a) => api(...a), fail: (e) => fail(e), toast: (t) => toast(t) };
 
 function wireRows(root = document) {
   root.querySelectorAll('tr[data-href]').forEach((tr) => tr.addEventListener('click', (e) => { if (!e.target.closest('a,button')) location.hash = tr.dataset.href; }));
