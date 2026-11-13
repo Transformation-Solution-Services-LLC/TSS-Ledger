@@ -49,3 +49,13 @@ test('the page helpers escape, write money and keep only a plain launch route', 
   assert.equal(launchRoute('#tss_launch=abc&tss_to=%23%2Ffunds%2Fabc'), '#/funds/abc');
   assert.equal(launchRoute('#tss_launch=abc&tss_to=javascript%3Aalert(1)'), '');
 });
+
+test('the privacy policy and license agreement are public pages with the company name and no em dash', () => {
+  for (const f of ['privacy.html', 'license.html']) {
+    const text = src(f);
+    assert.ok(text.includes('Transformation Solution Services, LLC'), f);
+    assert.ok(!text.includes('—'), `${f} has an em dash`);
+    assert.ok(!text.includes('{{'), `${f} has an unfilled placeholder`);
+    assert.doesNotMatch(text, /<script/, `${f} runs no script`);
+  }
+});
