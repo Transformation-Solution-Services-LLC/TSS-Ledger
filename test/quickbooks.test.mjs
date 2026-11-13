@@ -355,3 +355,13 @@ test('profit and loss totals read from the report', () => {
     { income: 1000.5, expenses: 500, net: 500.5 });
   assert.deepEqual(profitAndLoss({}), { income: 0, expenses: 0, net: 0 });
 });
+
+test('a failed QuickBooks call keeps Intuit\'s transaction id for support', async () => {
+  const { qboClient, QuickbooksError } = await import('../lib/quickbooks.js');
+  const fetchImpl = async () => new Response(JSON.stringify({ Fault: {} }), { status: 403, headers: { 'content-type': 'application/json', intuit_tid: '1-abc-123' } });
+  const client = qboClient({ apiBase: 'https://qb.example', realmId: '9', accessToken: async () => 't', fetchImpl });
+  const err = await client.all('Account').catch((e) => e);
+  assert.ok(err instanceof QuickbooksError);
+  assert.equal(err.code, 'denied');
+  assert.equal(err.intuit_tid, '1-abc-123');
+});
