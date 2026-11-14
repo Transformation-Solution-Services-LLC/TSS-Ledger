@@ -47,7 +47,7 @@ DEV_SIGNIN=on npm start                     # http://localhost:8797
 - **The error tracker gets ids, never people.** Keep `test/error-tracking.test.mjs` passing.
 - **Organization export is Cockpit's alone.** `GET /api/export/org` answers only `EXPORT_TOKEN`, logged in the activity log.
 - **CI needs no secrets.** Postgres runs as a CI service; Cockpit is a stand-in; Claude is stubbed.
-- **The look is the shared TSS app shell**: cream page, light side column with the brand mark upper left, DM Sans served from `public/fonts` (as in Cockpit), Cockpit's theme tokens between `/* tss-theme:start */` and `/* tss-theme:end */`. `test/ui.test.mjs` enforces it.
+- **The look is the shared TSS app shell**: navy page, dark by default with light as the switch, the app symbol upper left (no robot), Selawik served from `public/fonts` (Segoe UI where present) and the shared `public/tss-look.css`, Cockpit's theme tokens between `/* tss-theme:start */` and `/* tss-theme:end */`. `test/ui.test.mjs` enforces it.
 
 ## Writing conventions
 

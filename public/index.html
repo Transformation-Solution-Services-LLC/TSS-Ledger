@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f1eee5">
   <title>Ledger</title>
-  <link rel="icon" href="/brand/ledger.png" type="image/png">
+  <link rel="icon" href="/brand/ledger.svg" type="image/svg+xml">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,11 +14,12 @@
   <script src="/tss-theme.js"></script>
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/tss-nav.css">
+  <link rel="stylesheet" href="/tss-look.css">
 </head>
 <body>
   <div id="login" class="login" hidden>
     <div class="card login-card">
-      <h1 class="brandbar brandbar-login"><picture><source srcset="/brand/tss-wordmark-light.webp" media="not all" data-tss-dark><img class="brandbar-tss" src="/brand/tss-wordmark.webp" alt="TSS"></picture><img class="brandbar-icon" src="/brand/ledger.png" alt=""><span class="brandbar-name">Ledger</span><img class="brandbar-wally" src="/brand/rook-e-robot.webp" alt=""></h1>
+      <h1 class="brandbar brandbar-login"><picture><source srcset="/brand/tss-wordmark-light.webp" media="not all" data-tss-dark><img class="brandbar-tss" src="/brand/tss-wordmark.webp" alt="TSS"></picture><img class="brandbar-icon" src="/brand/ledger.svg" alt=""><span class="brandbar-name">Ledger</span></h1>
       <p class="muted">What each grant has, has spent and has left.</p>
       <p id="login-message">Open Ledger from Cockpit to sign in.</p>
       <button id="cockpit-link" type="button" class="primary" hidden>Go to Cockpit</button>
@@ -29,7 +30,7 @@
 
   <div id="app" class="shell" hidden>
     <aside class="side">
-      <a class="brandbar" href="#/"><picture><source srcset="/brand/tss-wordmark-light.webp" media="not all" data-tss-dark><img class="brandbar-tss" src="/brand/tss-wordmark.webp" alt="TSS"></picture><img class="brandbar-icon" src="/brand/ledger.png" alt=""><span class="brandbar-name">Ledger</span><img class="brandbar-wally" src="/brand/rook-e-robot.webp" alt=""></a>
+      <a class="brandbar" href="#/"><picture><source srcset="/brand/tss-wordmark-light.webp" media="not all" data-tss-dark><img class="brandbar-tss" src="/brand/tss-wordmark.webp" alt="TSS"></picture><img class="brandbar-icon" src="/brand/ledger.svg" alt=""><span class="brandbar-name">Ledger</span></a>
       <nav class="nav" aria-label="Ledger">
         <a href="#/" data-view="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11L12 4l8.5 7v9h-5.5v-5.5h-6V20H3.5z"/></svg><span>Overview</span></a>
         <a href="#/data" data-view="data"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg><span>Analyze</span></a>

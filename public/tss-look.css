@@ -1,0 +1,64 @@
+/* The TSS look: navy glow, dark by default, Office-style structure. The colors
+   themselves are the shared theme tokens in each app's styles.css.
+   The same file in every TSS app; change it in one, copy it to all.
+   Load it last, after the app's own styles. Font: Selawik (Microsoft, SIL OFL),
+   served from /fonts; Segoe UI is used instead where the computer has it. */
+@font-face { font-family: "Selawik"; src: url("fonts/selawik-light.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawik-regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawik-bold.woff2") format("woff2"); font-weight: 600 800; font-style: normal; font-display: swap; }
+
+:root {
+  --tss-font: "Segoe UI Variable Text", "Segoe UI", "Selawik", system-ui, -apple-system, sans-serif;
+  --tss-radius: 8px; --tss-card-bg: var(--surface); --tss-card-line: var(--border);
+  --tss-card-shadow: 0 1px 2px rgba(0,0,0,.06), 0 0 1px rgba(0,0,0,.1);
+  --tss-page: var(--bg);
+}
+:root[data-theme="dark"] {
+  --tss-card-bg: linear-gradient(180deg, rgba(16,58,118,.62), rgba(10,50,105,.32));
+  --tss-card-line: rgba(111,168,232,.24);
+  --tss-card-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 10px 30px rgba(0,0,0,.28);
+  --tss-page: radial-gradient(70% 55% at 85% 0%, rgba(26,79,150,.55), transparent 60%),
+              radial-gradient(60% 50% at 0% 100%, rgba(10,50,105,.7), transparent 65%), #061A38;
+  color-scheme: dark;
+}
+
+html, body { font-family: var(--tss-font); }
+body { background: var(--tss-page); background-attachment: fixed; color: var(--text); }
+button, input, select, textarea { font-family: inherit; }
+h1, h2, h3 { font-weight: 600; letter-spacing: -.005em; }
+
+/* Panels: flat in light, glass with a soft blue edge in dark. */
+.card { background: var(--tss-card-bg); border: 1px solid var(--tss-card-line); border-radius: var(--tss-radius); box-shadow: var(--tss-card-shadow); }
+:root[data-theme="dark"] .card { border-radius: 12px; }
+:root[data-theme="dark"] .side { background: rgba(6,26,56,.55); border-color: rgba(111,168,232,.18); }
+:root[data-theme="dark"] input, :root[data-theme="dark"] textarea, :root[data-theme="dark"] select { background: rgba(255,255,255,.04); border-color: rgba(111,168,232,.28); color: var(--text); }
+button { border-radius: 4px; }
+button.primary { box-shadow: none; }
+:root[data-theme="dark"] button.primary { background: linear-gradient(180deg, #2A7BD0, #0D4284); border-color: rgba(111,168,232,.55); color: #FFFFFF; box-shadow: 0 0 18px rgba(31,111,178,.45); }
+:root[data-theme="dark"] button.primary:hover { background: linear-gradient(180deg, #3A8BE0, #145099); }
+:root[data-theme="dark"] .nav button[aria-current="true"] { background: rgba(111,168,232,.14); color: #FFFFFF; box-shadow: inset 3px 0 0 #6FA8E8; }
+
+/* Upper left: the app's symbol and name. The robot is gone. */
+.brandbar-wally { display: none !important; }
+.brandbar-icon { border-radius: 8px; }
+:root[data-theme="dark"] .brandbar-name { color: #FFFFFF; }
+
+/* The top strip (tss-nav.js): quiet outline buttons, Cockpit in navy. */
+.tss-nav, .tss-nav-back, .tss-nav-theme, .tss-nav-cockpit, .tss-nav-apps, .tss-rail { font-family: var(--tss-font); }
+.tss-nav-back, .tss-nav-theme, .tss-nav-apps { background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: 4px; font-weight: 600; }
+.tss-nav-back:hover, .tss-nav-theme:hover, .tss-nav-apps:hover { background: var(--primary-subtle); }
+.tss-nav-cockpit { background: #0A3269; border-color: #0A3269; color: #FFFFFF; border-radius: 4px; }
+.tss-nav-cockpit:hover { color: #FFFFFF; }
+:root[data-theme="dark"] .tss-nav-back, :root[data-theme="dark"] .tss-nav-theme, :root[data-theme="dark"] .tss-nav-apps { border-color: rgba(111,168,232,.3); }
+:root[data-theme="dark"] .tss-nav-cockpit { background: linear-gradient(180deg, #2A7BD0, #0D4284); border-color: rgba(111,168,232,.55); box-shadow: 0 0 16px rgba(31,111,178,.45); }
+
+/* The apps panel on the right. */
+.tss-rail { --tss-rail-bg: #FAFAFA; --tss-rail-line: #E0E0E0; --tss-rail-card: #FFFFFF; --tss-rail-ink: #242424; }
+:root[data-theme="dark"] .tss-rail { --tss-rail-bg: rgba(6,26,56,.92); --tss-rail-line: rgba(111,168,232,.22); backdrop-filter: blur(10px); }
+:root[data-theme="dark"] .tss-rail-tile, :root[data-theme="dark"] .tss-rail-title { --tss-rail-card: rgba(16,58,118,.45); --tss-rail-ink: #EAF1FB; }
+.tss-rail-tile { border-radius: 8px; font-weight: 600; }
+.tss-rail-here, a.tss-rail-tile:hover { border-color: var(--primary); }
+.tss-rail-here { box-shadow: inset 3px 0 0 var(--primary); }
+.tss-rail-mono { background: linear-gradient(160deg, #1A4F96, #0A3269); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

@@ -1,34 +1,36 @@
 /* The TSS app look, shared with Sherlock, Watson, Library,
-   Rollodex and Vault: a cream
+   Rollodex and Vault: a navy
    page, a light side column with the brand mark in its upper left (TSS
-   wordmark, the app's master icon, its name, Wally), white panels with a thin
+   wordmark, the app's master icon, its name, no robot), panels with a thin
    border, navy for the main action, the system font. The colors are
    Cockpit's theme tokens; test/ui.test.mjs keeps the block below equal to
    the shared one and brand colors out of the rest of this file. */
 /* tss-theme:start */
 :root {
-  --bg: #F6F4EE; --surface: #FFFFFF; --sunken: #F1EEE5;
-  --text: #222724; --text-2: #474F49; --muted: #5F6861;
-  --border: #DDD7CA; --primary: #0A3269; --primary-hover: #0D4284; --primary-text: #FFFFFF;
+  --bg: #F5F5F5; --surface: #FFFFFF; --sunken: #FAFAFA;
+  --text: #242424; --text-2: #424242; --muted: #616161;
+  --border: #E0E0E0; --primary: #0A3269; --primary-hover: #0D4284; --primary-text: #FFFFFF;
   --primary-subtle: #E6EBF3; --accent: #A9512F; --accent-subtle: #F8EAE4; --focus: #1F6FB2;
   --good: #166534; --good-subtle: #E3F0E6; --warn: #8A5A00; --warn-subtle: #F8EEDC;
   --bad: #8C1D18; --bad-subtle: #F7E1DF;
   color-scheme: light;
 }
 :root[data-theme="dark"] {
-  --bg: #191D1A; --surface: #222724; --sunken: #161A17;
-  --text: #F6F4EE; --text-2: #C8CEC7; --muted: #9EA69E;
-  --border: #3A413B; --primary: #82A9D2; --primary-hover: #9BBCDD; --primary-text: #10243D;
-  --primary-subtle: #28333D; --accent: #E99073; --accent-subtle: #3A2A25; --focus: #BAC7AE;
-  --good: #6FBE8B; --good-subtle: #223229; --warn: #D9A338; --warn-subtle: #352C1B;
-  --bad: #F09A92; --bad-subtle: #3A2322;
+  --bg: #061A38; --surface: #0C2654; --sunken: #081F45;
+  --text: #EAF1FB; --text-2: #C2D2EA; --muted: #8EA6C8;
+  --border: #1F3F72; --primary: #6FA8E8; --primary-hover: #9CC6F5; --primary-text: #061A38;
+  --primary-subtle: #12315F; --accent: #E99073; --accent-subtle: #3A2A2E; --focus: #9CC6F5;
+  --good: #6FBE8B; --good-subtle: #12352C; --warn: #D9A338; --warn-subtle: #2F2E22;
+  --bad: #F09A92; --bad-subtle: #3A2233;
   color-scheme: dark;
 }
 /* tss-theme:end */
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-@font-face { font-family: "DM Sans"; src: url("/fonts/dm-sans.woff2") format("woff2"); font-weight: 100 1000; font-style: normal; font-display: swap; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif; font-optical-sizing: auto; }
+@font-face { font-family: "Selawik"; src: url("/fonts/selawik-light.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("/fonts/selawik-regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("/fonts/selawik-bold.woff2") format("woff2"); font-weight: 600 800; font-style: normal; font-display: swap; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "Segoe UI Variable Text", "Segoe UI", "Selawik", system-ui, -apple-system, "Segoe UI", sans-serif; font-optical-sizing: auto; }
 h1, h2, h3 { line-height: 1.25; margin: 0 0 .5rem; }
 h2 { font-size: 1.35rem; } h3 { font-size: 1.05rem; margin-top: 1.5rem; }
 a { color: var(--primary); }
@@ -52,17 +54,15 @@ label > span { display: block; color: var(--text-2); margin-bottom: .2rem; }
 
 .shell { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
 .side { border-right: 1px solid var(--border); background: var(--sunken); padding: 1rem; display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; }
-/* Upper-left mark on every screen: TSS wordmark, app icon, app name, Wally. */
+/* Upper-left mark on every screen: TSS wordmark, app symbol, app name. */
 .brandbar { display: flex; align-items: center; gap: .45rem; margin: 0; min-width: 0; text-decoration: none; }
 .brandbar img, .brandbar picture { display: block; width: auto; flex: none; }
 .brandbar-tss { height: 20px; }
 .brandbar-icon { height: 28px; border-radius: 6px; }
 .brandbar-name { font-weight: 800; color: var(--primary); font-size: 1.15rem; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.brandbar-wally { height: 60px; width: auto; }
 .brandbar-login .brandbar-tss { height: 24px; }
 .brandbar-login .brandbar-icon { height: 34px; }
 .brandbar-login .brandbar-name { font-size: 1.5rem; }
-.brandbar-login .brandbar-wally { height: 96px; }
 .nav { display: flex; flex-direction: column; gap: .25rem; }
 .nav a { display: block; text-decoration: none; color: var(--text); padding: .5rem .6rem; border-radius: 8px; }
 .nav a:hover { background: var(--surface); }
