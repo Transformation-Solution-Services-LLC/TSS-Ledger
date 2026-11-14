@@ -57,4 +57,4 @@ DEV_SIGNIN=on npm start                     # http://localhost:8797
 - Never use an em dash. Use a comma, a colon, parentheses, or a second sentence.
 - Drop the word "that" wherever the sentence stays grammatical without it.
 - The app is "Ledger", never "TSS-Ledger" in the interface. TSS appears only as the wordmark.
-- Always "Transformation Solution Services, LLC", never "Transformative".
+- Always "Transformation Solutions Services, LLC", never "Transformative".
