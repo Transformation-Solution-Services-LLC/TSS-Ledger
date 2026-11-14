@@ -2,7 +2,7 @@
 // one, copy it to all. Load it in <head>, before the styles, as a plain script:
 //   <script src="tss-theme.js"></script>  (or /tss-theme.js)
 //
-// Light unless the person chose dark; the device's own setting is never used.
+// Dark unless the person chose light; the device's own setting is never used.
 // The choice follows the person across apps: Cockpit keeps it on their
 // account and hands it over in the address when it opens an app
 // (?tss_theme=dark); the app's Cockpit button hands it back the same way.
@@ -30,8 +30,8 @@
   try {
     if (mode) localStorage.setItem(KEY, mode);
     else mode = parse(localStorage.getItem(KEY));
-  } catch (e) { /* storage blocked: light, or what was handed over */ }
-  mode = mode || 'light';
+  } catch (e) { /* storage blocked: dark, or what was handed over */ }
+  mode = mode || 'dark';
 
   function paint() {
     root.setAttribute('data-theme', mode);

@@ -1,5 +1,5 @@
 // The look of the pages: the shared TSS theme tokens, the brand mark in the
-// upper left, DM Sans (as in Cockpit), and the writing rules.
+// upper left, Selawik (as in Cockpit), and the writing rules.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -16,19 +16,19 @@ test('the stylesheet carries the shared TSS theme tokens and names no brand colo
   const css = src('styles.css');
   const block = css.slice(css.indexOf('/* tss-theme:start */'), css.indexOf('/* tss-theme:end */'));
   const tokens = Object.fromEntries([...block.matchAll(/--([a-z0-9-]+):\s*(#[0-9A-Fa-f]{6})/g)].map((m, i) => [`${i < 20 ? 'light' : 'dark'}:${m[1]}`, m[2].toUpperCase()]));
-  const shared = { 'light:bg': '#F6F4EE', 'light:surface': '#FFFFFF', 'light:sunken': '#F1EEE5', 'light:text': '#222724', 'light:primary': '#0A3269', 'light:primary-hover': '#0D4284', 'light:primary-subtle': '#E6EBF3', 'light:accent': '#A9512F', 'light:border': '#DDD7CA', 'light:focus': '#1F6FB2', 'dark:bg': '#191D1A', 'dark:surface': '#222724', 'dark:primary': '#82A9D2', 'dark:primary-text': '#10243D', 'dark:accent': '#E99073' };
+  const shared = { 'light:bg': '#F5F5F5', 'light:surface': '#FFFFFF', 'light:sunken': '#FAFAFA', 'light:text': '#242424', 'light:primary': '#0A3269', 'light:primary-hover': '#0D4284', 'light:primary-subtle': '#E6EBF3', 'light:accent': '#A9512F', 'light:border': '#E0E0E0', 'light:focus': '#1F6FB2', 'dark:bg': '#061A38', 'dark:surface': '#0C2654', 'dark:primary': '#6FA8E8', 'dark:primary-text': '#061A38', 'dark:accent': '#E99073' };
   for (const [k, v] of Object.entries(shared)) assert.equal(tokens[k], v, k);
   const rest = css.slice(css.indexOf('/* tss-theme:end */'));
   for (const brand of ['#0a3269', '#17457f', '#c87255', '#a9512f', '#f6f4ee', '#ddd7ca']) assert.ok(!rest.toLowerCase().includes(brand), `${brand} named outside the theme tokens`);
-  assert.ok(css.includes('@font-face { font-family: "DM Sans"; src: url("/fonts/dm-sans.woff2")'), 'DM Sans, served from this app, as in Cockpit');
-  assert.ok(fs.existsSync(path.join(pub, 'fonts', 'dm-sans.woff2')), 'the font file ships with the app');
+  assert.ok(css.includes('@font-face { font-family: "Selawik"; src: url("/fonts/selawik-regular.woff2")'), 'Selawik, served from this app, as in Cockpit');
+  assert.ok(fs.existsSync(path.join(pub, 'fonts', 'selawik-regular.woff2')), 'the font file ships with the app');
 });
 
-test('upper left of every screen: TSS wordmark, the Ledger icon, the name, Wally', () => {
+test('upper left of every screen: TSS wordmark, the Ledger icon, the name, no robot', () => {
   const html = src('index.html');
-  assert.match(html, /<aside class="side">\s*<a class="brandbar"[^>]*>.*brandbar-tss.*brandbar-icon.*<span class="brandbar-name">Ledger<\/span>.*brandbar-wally/);
-  assert.match(html, /<h1 class="brandbar brandbar-login">.*brandbar-tss.*brandbar-icon.*Ledger.*brandbar-wally/);
-  for (const f of ['brand/tss-wordmark.webp', 'brand/tss-wordmark-light.webp', 'brand/wally.webp', 'brand/ledger.png']) assert.ok(fs.existsSync(path.join(pub, f)), f);
+  assert.match(html, /<aside class="side">\s*<a class="brandbar"[^>]*>.*brandbar-tss.*brandbar-icon.*<span class="brandbar-name">Ledger<\/span>/);
+  assert.match(html, /<h1 class="brandbar brandbar-login">.*brandbar-tss.*brandbar-icon.*Ledger/);
+  for (const f of ['brand/tss-wordmark.webp', 'brand/tss-wordmark-light.webp', 'brand/ledger.svg', 'tss-look.css', 'fonts/selawik-regular.woff2']) assert.ok(fs.existsSync(path.join(pub, f)), f);
   assert.doesNotMatch(html, /TSS[- ]Ledger|Banks/, 'TSS appears only as the wordmark');
 });
 

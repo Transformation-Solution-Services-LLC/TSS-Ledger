@@ -1,15 +1,15 @@
 /* The TSS top strip (tss-nav.js): Back on the left, light/dark and Cockpit on the right.
-   The same file in every TSS app; clay buttons in DM Sans. */
+   The same file in every TSS app; navy buttons in Selawik (Segoe UI where present). */
 :root { --tss-clay: #A9512F; --tss-clay-subtle: #F8EAE4; --tss-clay-ink: #FFFFFF; --tss-placeholder: #5F6861; }
 :root[data-theme="dark"] { --tss-clay: #E99073; --tss-clay-subtle: #3A2A25; --tss-clay-ink: #1B1410; --tss-placeholder: #9EA69E; }
 /* Hint text in every field, readable in both modes (the browser's own grey fails on dark). */
 ::placeholder { color: var(--tss-placeholder); opacity: 1; }
-.tss-nav { display: flex; align-items: center; gap: .5rem; margin: 0 0 1rem; font-family: "DM Sans", system-ui, sans-serif; }
+.tss-nav { display: flex; align-items: center; gap: .5rem; margin: 0 0 1rem; font-family: "Segoe UI Variable Text", "Segoe UI", "Selawik", system-ui, sans-serif; }
 .tss-nav[hidden], .tss-nav [hidden], .tss-nav-back[hidden], .tss-nav-theme[hidden], .tss-nav-cockpit[hidden] { display: none !important; }
 .tss-nav-gap { flex: 1; }
 .tss-nav-back, .tss-nav-theme, .tss-nav-cockpit {
   display: inline-flex; align-items: center; gap: .3rem; min-height: 36px; padding: .35rem .85rem;
-  border-radius: 8px; font: 600 .9rem/1.2 "DM Sans", system-ui, sans-serif; cursor: pointer; text-decoration: none;
+  border-radius: 8px; font: 600 .9rem/1.2 "Segoe UI Variable Text", "Segoe UI", "Selawik", system-ui, sans-serif; cursor: pointer; text-decoration: none;
 }
 .tss-nav-back, .tss-nav-theme { background: var(--surface, #fff); color: var(--tss-clay); border: 1px solid var(--tss-clay); }
 .tss-nav-back:hover, .tss-nav-theme:hover { background: var(--tss-clay-subtle); }
@@ -22,7 +22,7 @@
 /* The apps panel (tss-nav.js): the person's apps down the right side, picture and name. */
 .tss-nav-apps {
   display: none; align-items: center; gap: .3rem; min-height: 36px; padding: .35rem .85rem; border-radius: 8px;
-  font: 600 .9rem/1.2 "DM Sans", system-ui, sans-serif; cursor: pointer;
+  font: 600 .9rem/1.2 "Segoe UI Variable Text", "Segoe UI", "Selawik", system-ui, sans-serif; cursor: pointer;
   background: var(--surface, #fff); color: var(--tss-clay); border: 1px solid var(--tss-clay);
 }
 .tss-nav-apps:hover { background: var(--tss-clay-subtle); }
@@ -33,7 +33,7 @@
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 900; width: 200px; box-sizing: border-box;
   display: flex; flex-direction: column; gap: 8px; padding: 16px 12px; overflow-y: auto;
   background: var(--tss-rail-bg, #F6F4EE); border-left: 1px solid var(--tss-rail-line, #DDD8CC);
-  font-family: "DM Sans", system-ui, sans-serif;
+  font-family: "Segoe UI Variable Text", "Segoe UI", "Selawik", system-ui, sans-serif;
 }
 :root[data-theme="dark"] .tss-rail { --tss-rail-bg: #1B1F26; --tss-rail-line: #2E3440; }
 .tss-rail-title { font-weight: 700; font-size: 1rem; color: var(--tss-rail-ink, #1B2430); margin: 0 4px 4px; }
