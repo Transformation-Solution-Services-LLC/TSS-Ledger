@@ -11,7 +11,7 @@ const stores = [['memory', async () => new MemoryStore().init()]];
 if (process.env.TEST_DATABASE_URL) {
   stores.push(['postgres', async () => {
     const s = await new PostgresStore(process.env.TEST_DATABASE_URL).init();
-    await s.q('TRUNCATE ledger_quickbooks, ledger_data_chats, ledger_datasets, ledger_intakes, ledger_activity, ledger_entries, ledger_lines, ledger_funds');
+    await s.q('TRUNCATE ledger_bank, ledger_quickbooks, ledger_data_chats, ledger_datasets, ledger_intakes, ledger_activity, ledger_entries, ledger_lines, ledger_funds');
     return s;
   }]);
 }
@@ -195,6 +195,22 @@ for (const [name, open] of stores) {
 }
 
 for (const [name, open] of stores) {
+  test(`${name}: one bank record per organization, merged on save, accounts kept as given`, async () => {
+    const store = await open();
+    try {
+      assert.equal(await store.getBank('org-a'), null);
+      const b = await store.saveBank('org-a', { customer_id: 'cus_1', mode: 'test' });
+      assert.deepEqual([b.org_id, b.customer_id, b.mode, b.accounts], ['org-a', 'cus_1', 'test', []]);
+      const acct = { id: 'fca_1', institution: 'Bank', last4: '6789', balance: { current: 1234.5, as_of: '2026-11-15T00:00:00.000Z' }, removed_at: null };
+      const u = await store.saveBank('org-a', { accounts: [acct] });
+      assert.equal(u.customer_id, 'cus_1', 'a save merges');
+      assert.deepEqual(u.accounts, [acct]);
+      await store.saveBank('org-b', { customer_id: 'cus_2' });
+      assert.equal((await store.getBank('org-b')).customer_id, 'cus_2');
+      assert.equal((await store.getBank('org-a')).accounts.length, 1, 'each organization has its own');
+    } finally { await store.close(); }
+  });
+
   test(`${name}: one QuickBooks connection per organization, saved, merged, due and removed; entries keep their QuickBooks reference`, async () => {
     const store = await open();
     try {

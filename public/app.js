@@ -168,7 +168,7 @@ function route() {
   document.querySelectorAll('.nav a').forEach((a) => a.setAttribute('aria-current', String(a.dataset.view === view)));
   const show = {
     home: showHome, funds: () => (parts[1] ? showFund(parts[1]) : showFunds()), spending: showSpending,
-    import: showImport, activity: showActivity, quickbooks: showQuickbooks,
+    import: showImport, activity: showActivity, quickbooks: showQuickbooks, bank: showBank,
     data: () => (parts[1] ? showDataset(dataCtx, decodeURIComponent(parts[1]), params()) : showData(dataCtx)),
   }[view] || showHome;
   show().catch((err) => { $('#view').innerHTML = `<p class="error">${esc(err.message)}</p>`; });
@@ -491,6 +491,67 @@ function wireQbConnect() {
     e.target.disabled = true;
     try { const { url } = await api('/api/quickbooks/connect', { method: 'POST' }); location.href = url; } catch (err) { e.target.disabled = false; fail(err); }
   });
+}
+
+// ---- Bank: read only, through Stripe, managers ----
+
+// Stripe's own window for signing in to the bank, loaded only when asked for.
+let stripeJs = null;
+function loadStripe() {
+  stripeJs ??= new Promise((resolve, reject) => {
+    if (window.Stripe) return resolve(window.Stripe);
+    const el = document.createElement('script');
+    el.src = 'https://js.stripe.com/v3/';
+    el.onload = () => (window.Stripe ? resolve(window.Stripe) : reject(new Error('Stripe did not load')));
+    el.onerror = () => { stripeJs = null; reject(new Error('Stripe did not load. Check the connection and try again.')); };
+    document.head.append(el);
+  });
+  return stripeJs;
+}
+
+async function showBank() {
+  if (!state.canManage) { $('#view').innerHTML = '<p class="error">Bank accounts are for Ledger managers.</p>'; return; }
+  const b = await api('/api/bank');
+  const head = `<div class="head"><div><h2>Bank</h2>${b.test ? '<p class="muted">Practice mode: test banks only.</p>' : ''}</div>${b.setup ? '<div class="row"><button class="primary" id="bank-link">Link a bank account</button></div>' : ''}</div>`;
+  if (!b.setup) { $('#view').innerHTML = `${head}<p class="empty">Linking a bank account is not set up yet.</p>`; return; }
+  const card = (a) => `<div class="card" data-acct="${esc(a.id)}">
+      <div class="head"><div><h3>${esc(a.institution || 'Bank')} ${esc(a.name)} ${a.last4 ? `ending ${esc(a.last4)}` : ''}</h3>
+        <p class="muted">${a.balance?.current !== null && a.balance?.current !== undefined ? `Balance ${esc(money(a.balance.current))}` : 'No balance yet'}${a.balance?.available !== null && a.balance?.available !== undefined ? `, ${esc(money(a.balance.available))} available` : ''}${a.balance?.as_of ? `, as of ${esc(when(a.balance.as_of))}` : ''}. Linked by ${esc(a.linked_by || 'a manager')}.</p></div>
+        <div class="row"><button data-refresh>Refresh balance</button><button data-unlink>Unlink</button></div></div>
+      <div data-txns><p class="muted">Reading transactions</p></div>
+    </div>`;
+  $('#view').innerHTML = `${head}
+    ${b.accounts.length ? b.accounts.map(card).join('') : '<div class="card empty-state"><p><strong>See the bank balance next to grant spending</strong></p><p class="muted">You sign in to the bank on Stripe\'s window. Ledger reads the balance and transactions only; it cannot move money.</p></div>'}`;
+  const again = () => showBank().catch(fail);
+  $('#bank-link')?.addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    try {
+      const [Stripe, { client_secret }] = await Promise.all([loadStripe(), api('/api/bank/session', { method: 'POST' })]);
+      const result = await Stripe(b.publishable_key).collectFinancialConnectionsAccounts({ clientSecret: client_secret });
+      if (result.error) { toast(result.error.message || 'The bank was not linked.'); e.target.disabled = false; return; }
+      const sess = result.financialConnectionsSession;
+      if (!sess?.accounts?.length) { toast('No account was chosen.'); e.target.disabled = false; return; }
+      const done = await api('/api/bank/complete', { method: 'POST', body: { session_id: sess.id } });
+      toast(done.linked === 1 ? 'Bank account linked.' : `${done.linked} bank accounts linked.`);
+      again();
+    } catch (err) { e.target.disabled = false; fail(err); }
+  });
+  for (const el of document.querySelectorAll('[data-acct]')) {
+    const id = el.dataset.acct;
+    el.querySelector('[data-refresh]').addEventListener('click', async (e) => {
+      e.target.disabled = true;
+      try { await api(`/api/bank/accounts/${encodeURIComponent(id)}/refresh`, { method: 'POST' }); toast('Balance asked for. It can take a minute to arrive.'); again(); } catch (err) { e.target.disabled = false; fail(err); }
+    });
+    el.querySelector('[data-unlink]').addEventListener('click', async () => {
+      if (!confirm('Unlink this account? Ledger stops reading it.')) return;
+      try { await api(`/api/bank/accounts/${encodeURIComponent(id)}/unlink`, { method: 'POST' }); toast('Account unlinked.'); again(); } catch (err) { fail(err); }
+    });
+    api(`/api/bank/accounts/${encodeURIComponent(id)}/transactions`).then(({ transactions }) => {
+      el.querySelector('[data-txns]').innerHTML = transactions.length
+        ? `<table class="list"><thead><tr><th>Date</th><th>Description</th><th class="num">Amount</th><th></th></tr></thead><tbody>${transactions.map((t) => `<tr><td>${esc(day(t.date))}</td><td>${esc(t.description)}</td><td class="num">${esc(money(t.amount))}</td><td>${t.status === 'pending' ? '<span class="badge">Pending</span>' : ''}</td></tr>`).join('')}</tbody></table>`
+        : '<p class="muted">No transactions yet. New ones arrive within a day of linking.</p>';
+    }).catch(() => { el.querySelector('[data-txns]').innerHTML = '<p class="muted">Transactions could not be read just now.</p>'; });
+  }
 }
 
 async function showActivity() {

@@ -30,7 +30,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { requireUser, requireManager, requireService, requireExport, sessionFor, devSignInEnabled, serviceTokenMatches } from './lib/auth.js';
-import { runLiveChecks, checkClaude, checkComposio, checkTssApp } from './lib/live-check.js';
+import { runLiveChecks, checkClaude, checkComposio, checkTssApp, remembered } from './lib/live-check.js';
+import { bankRoutes, bankConfig, checkBank } from './lib/bank.js';
 import { createTicketVerifier, cockpitUrl, frameHeaders } from './lib/cockpit.js';
 import { createCockpitLink } from './lib/cockpit-link.js';
 import { publicErrorBody, logSafeError, normalizePublicError, requestContext, PublicError } from './lib/public-error.js';
@@ -79,6 +80,9 @@ export function createApp({
   // QuickBooks Online, read only (lib/quickbooks.js). Tests pass a stand-in Intuit.
   quickbooksEnv = () => process.env,
   quickbooksFetch = (...a) => globalThis.fetch(...a),
+  // Bank accounts through Stripe Financial Connections (lib/bank.js). Tests pass a stand-in Stripe.
+  bankEnv = () => process.env,
+  bankFetch = (...a) => globalThis.fetch(...a),
   // Questions about a person's spreadsheets (lib/analysis.js, services/ask.js).
   ask = askApi,
   askDeps = {},
@@ -188,6 +192,7 @@ export function createApp({
     res.json(await runLiveChecks({
       claude: checkClaude({ key: env.ANTHROPIC_API_KEY, model: senseApi.drafter() }),
       quickbooks: checkQuickbooks({ env: quickbooksEnv(), fetchImpl: quickbooksFetch }),
+      stripe: checkBank({ env: bankEnv(), fetchImpl: bankFetch, remembered }),
       ...Object.fromEntries(senseApi.reviewers().filter((m) => /^claude-/.test(m)).map((m) => [`reviewer:${m}`, checkClaude({ key: env.ANTHROPIC_API_KEY, model: m })])),
     }));
   }));
@@ -203,7 +208,7 @@ export function createApp({
   app.get('/api/health', wrap(async (_req, res) => {
     let db = true;
     try { await store.ping(); } catch (_) { db = false; }
-    res.status(db ? 200 : 503).json({ ok: db, app: APP_NAME, store: store.kind, db, cockpit_url: cockpitUrl(), dev_signin: devSignInEnabled(), rollodex: rollodex.rollodexConfigured(), reads_files: sense.configured(), quickbooks: quickbooksConfig(quickbooksEnv()).status, asks: ask.configured(), chat_files: chatFiles.chatFilesConfigured() });
+    res.status(db ? 200 : 503).json({ ok: db, app: APP_NAME, store: store.kind, db, cockpit_url: cockpitUrl(), dev_signin: devSignInEnabled(), rollodex: rollodex.rollodexConfigured(), reads_files: sense.configured(), quickbooks: quickbooksConfig(quickbooksEnv()).status, bank: bankConfig(bankEnv()).status, asks: ask.configured(), chat_files: chatFiles.chatFilesConfigured() });
   }));
 
   app.get('/api/me', requireUser, (req, res) => {
@@ -213,6 +218,7 @@ export function createApp({
       rollodex: rollodex.rollodexConfigured() ? rollodex.rollodexUrl() : '',
       reads_files: sense.configured(),
       quickbooks: quickbooksConfig(quickbooksEnv()).status === 'ready',
+      bank: bankConfig(bankEnv()).status === 'ready',
       asks: ask.configured(),
       today: clock(),
       release: RELEASE,
@@ -417,9 +423,9 @@ export function createApp({
 
   app.get('/api/export/org', requireExport, wrap(async (req, res) => {
     const org = req.user.org_id;
-    const [live, archived, lines, entries, activity, datasetList, chatList] = await Promise.all([
+    const [live, archived, lines, entries, activity, datasetList, chatList, bank] = await Promise.all([
       store.listFunds(org), store.listFunds(org, { archived: true }), store.listLines(org, { removed: true }), store.listEntries(org), store.activity(org, EXPORT_ACTIVITY_LIMIT),
-      store.listDatasets(org), store.listChats(org),
+      store.listDatasets(org), store.listChats(org), store.getBank(org),
     ]);
     const datasets = await Promise.all(datasetList.map((d) => store.getDataset(org, d.id)));
     const data_chats = await Promise.all(chatList.map((c) => store.getChat(org, c.id)));
@@ -427,7 +433,7 @@ export function createApp({
     audit(req, 'export.org', 'everything', `${funds.length} funds, ${lines.length} budget lines, ${entries.length} entries`);
     res.json({
       schema: 'tss.org-export/v1', app: 'ledger', org_id: org, exported_at: new Date().toISOString(),
-      tables: { funds, budget_lines: lines, entries, activity, datasets, data_chats }, files: [],
+      tables: { funds, budget_lines: lines, entries, activity, datasets, data_chats, bank_accounts: bank?.accounts || [] }, files: [],
     });
   }));
 
@@ -650,6 +656,7 @@ export function createApp({
 
   intakeRoutes(app, { store, wrap, requireManager, audit, clock, usage, sense, senseDeps, isId });
   app.locals.quickbooks = quickbooksRoutes(app, { store, wrap, requireManager, audit, clock, env: quickbooksEnv, fetchImpl: quickbooksFetch });
+  bankRoutes(app, { store, wrap, requireManager, audit, env: bankEnv, fetchImpl: bankFetch });
   analysisRoutes(app, { store, wrap, requireUser, audit, clock, usage, ask, askDeps, chatFiles, isId, compactAt });
 
   app.get('/api/activity', requireManager, wrap(async (req, res) => {
